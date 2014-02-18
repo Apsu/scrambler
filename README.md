@@ -12,6 +12,8 @@ The executive summary design goal is to provide a simple agent with minimal depe
 * Do this automatically, as soon as those machines are plugged into the same network
 * Handle failures, partitioning, or controlled removal of machines from the cluster
 
+Once clustered, the agents will manage their colocated resources based on policy shared between via the cluster mesh.
+
 Docker
 ---
 Primarily, resources are docker containers.
