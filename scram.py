@@ -86,7 +86,7 @@ class Cluster():
         "Thread for updating cluster state information"
 
         # Until signaled to exit
-        while not self.fence.isSet():
+        while not self.fence.is_set():
             try:
                 # Wait for updates received from other nodes
                 key, value = self.cluster_queue.get(timeout=1)
