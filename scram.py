@@ -16,12 +16,13 @@ class Cluster():
 
     def __init__(
         self,
-        address = "224.0.0.127",
-        port = 4999,
-        interface = None,
-        protocol = "epgm",
-        interval = 1
+        address="224.0.0.127",
+        port=4999,
+        interface=None,
+        protocol="epgm",
+        interval=1
     ):
+        # Store parameters
         self.address = address
         self.port = port
         self.interface = interface
@@ -69,7 +70,7 @@ class Cluster():
             while any(map(lambda x: x.is_alive(), self.threads)):
                 map(lambda x: x.join(1), self.threads)
         # Handle it
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             print("Interrupted. Waiting on threads...")
 
             # Signal fence so threads exit
@@ -107,7 +108,7 @@ class Cluster():
                     "Cluster State: {}".format(
                         json.dumps(
                             self.cluster_state,
-                            indent = True
+                            indent=True
                         )
                     )
                 )
@@ -118,7 +119,6 @@ class Cluster():
             # Don't die for anything else
             else:
                 continue
-
 
     def publish(self):
         "Thread for pushing our state to the cluster"
@@ -147,7 +147,6 @@ class Cluster():
             # Wait the interval
             time.sleep(self.interval)
 
-
     def subscribe(self):
         "Thread for receiving state from the cluster"
 
@@ -168,7 +167,7 @@ class Cluster():
             sockets = dict(poller.poll(self.interval * 1000))  # ms
 
             # If we got one
-            if sockets:
+            if sub in sockets:
                 # Get message pieces
                 key, host, msg = sub.recv_multipart()
 
