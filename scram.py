@@ -155,7 +155,7 @@ class Cluster():
         while not self.fence.is_set():
             try:
                 # Wait for updates received from other nodes
-                key, value = self.cluster_queue.get()  # TODO: Might break
+                key, value = self.cluster_queue.get(timeout=1)
 
                 # Convert to object
                 value = json.loads(value)
