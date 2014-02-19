@@ -14,6 +14,7 @@ import zmq
 def synchronized(access):
     "Thread-safe locking method decorator"
 
+    # TODO: Make use of access and switch to condition variable
     def decorator(method):
         def synced(self, *args, **kwargs):
             if not hasattr(self, "_lock"):
@@ -42,7 +43,7 @@ class State():
 
     @synchronized("write")
     def __iter__(self):
-        for item in self._state.iteritems():
+        for item in self._state.items():
             yield item
 
     @synchronized("read")
@@ -60,6 +61,10 @@ class State():
     @synchronized("write")
     def update(self, item):
         self._state.update(item)
+
+    @synchronized("read")
+    def __dict__(self):
+        return dict(self._state)
 
 
 class Cluster():
@@ -227,7 +232,7 @@ class Cluster():
         # Until signaled to exit
         while not self.fence.is_set():
             # Wait for message
-            sockets = dict(poller.poll(self.announce_interval * 1000))  # ms
+            sockets = dict(poller.poll(self.announce_interval * 1000))  # In ms
 
             # If we got one
             if sub in sockets:
