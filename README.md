@@ -19,10 +19,12 @@ Docker
 ---
 Primarily, resources are docker containers.
 
-Discovery
----
-Discovery is currently happening by way of LLDP to identify nodes as they enter the network. Each Scram agent monitors LLDP-discovered nodes and attempts to connect and authenticate with new nodes as they become available.
-
 ZeroMQ
 ---
 ZMQ is used to cluster Scram agents in a full-mesh so cluster resource state and policy can be replicated, as well as cluster state itself.
+
+Discovery
+---
+Discovery and heartbeating is accomplished by virtue of state update messages sent over the
+multicast pub-sub ZMQ mesh mentioned above. Currently, ZMQ's EPGM protocol is being used for
+robust, reliable dynamic discovery and state transfer.
