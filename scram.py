@@ -11,41 +11,93 @@ import time
 import zmq
 
 
+def synchronized(access):
+    "Thread-safe locking method decorator"
+
+    def decorator(method):
+        def synced(self, *args, **kwargs):
+            if not hasattr(self, "_lock"):
+                setattr(self, "_lock", threading.RLock())
+            with getattr(self, "_lock"):
+                return method(*args, **kwargs)
+        return synced
+    return decorator
+
+
+class State():
+    "Thread-safe cluster state store"
+
+    def __init__(self, address, hostname):
+        # Store parameters
+        self.address = address
+        self.hostname = hostname
+
+        # Initialize state with ourself
+        self._state = {
+            self.hostname: {
+                "timestamp": time.time(),
+                "address": self.address
+            }
+        }
+
+    @synchronized("write")
+    def __iter__(self):
+        for item in self._state.iteritems():
+            yield item
+
+    @synchronized("read")
+    def __getitem__(self, key):
+        return self._state[key]
+
+    @synchronized("write")
+    def __setitem__(self, key, value):
+        self._state[key] = value
+
+    @synchronized("write")
+    def __delitem__(self, key):
+        del self._state[key]
+
+    @synchronized("write")
+    def update(self, item):
+        self._state.update(item)
+
+
 class Cluster():
     "Participate in cluster discovery and state"
 
     def __init__(
         self,
-        address="224.0.0.127",
-        port=4999,
-        interface=None,
-        protocol="epgm",
-        interval=1
+        bind="224.0.0.127",   # Multicast address; default is link-local
+        port=4999,            # Multicast port
+        interface=None,       # Physical interface to use
+        protocol="epgm",      # Unprivileged reliable multicast protocol
+        announce_interval=1,  # How often to announce ourselves
+        update_interval=5,    # How often to update our cluster state view
+        zombie_interval=15    # How long after update to consider node dead
     ):
         # Store parameters
-        self.address = address
+        self.bind = bind
         self.port = port
         self.interface = interface
         self.protocol = protocol
-        self.interval = interval
+        self.announce_interval = announce_interval
+        self.update_interval = update_interval
+        self.zombie_interval = zombie_interval
 
         # Build connection string
         self.connection = "{}://{}{}:{}".format(
             protocol,
             interface + ";" if interface else "",
-            address,
+            bind,
             port
         )
 
-        # Store hostname
+        # Store hostname and address
         self.hostname = platform.node()
+        self.address = socket.gethostbyname(socket.getfqdn())
 
-        # Preload our info
-        self.cluster_state = {
-            self.hostname: {
-                "address": socket.gethostbyname(socket.getfqdn())
-            }
-        }
+        # Thread-safe state object
+        self.cluster_state = State(self.address, self.hostname)
 
         # Cluster state queue
         self.cluster_queue = Queue.Queue()
@@ -57,10 +109,10 @@ class Cluster():
         self.threads = []
 
         # Add threads to pool
-        for target in [self.publish, self.subscribe, self.update]:
+        for target in [self.announce, self.listen, self.handle, self.update]:
             self.threads.append(threading.Thread(target=target))
 
-        # Daemonize and start threads
+        # Start threads
         for thread in self.threads:
             thread.start()
 
@@ -83,13 +135,27 @@ class Cluster():
             print("Exiting.")
 
     def update(self):
-        "Thread for updating cluster state information"
+        "Thread for periodically updating cluster state dict"
+
+        # Until signaled to exit
+        while not self.fence.is_set():
+            # Check for zombies and headshot them
+            for node, state in self.cluster_state:
+                if time.time() - state["timestamp"] > self.zombie_interval:
+                    print("Pruning zombie: {}".format(node))
+                    del self.cluster_state[node]
+
+            # Wait interval before next check
+            self.fence.wait(self.update_interval)
+
+    def handle(self):
+        "Thread for handling cluster state messages"
 
         # Until signaled to exit
         while not self.fence.is_set():
             try:
                 # Wait for updates received from other nodes
-                key, value = self.cluster_queue.get(timeout=1)
+                key, value = self.cluster_queue.get()  # TODO: Might break
 
                 # Convert to object
                 value = json.loads(value)
@@ -117,8 +183,8 @@ class Cluster():
             else:
                 continue
 
-    def publish(self):
-        "Thread for pushing our state to the cluster"
+    def announce(self):
+        "Thread for announcing our state to the cluster"
 
         # Create and bind publisher socket
         context = zmq.Context()
@@ -142,9 +208,9 @@ class Cluster():
             )
 
             # Wait the interval
-            time.sleep(self.interval)
+            time.sleep(self.announce_interval)
 
-    def subscribe(self):
+    def listen(self):
         "Thread for receiving state from the cluster"
 
         # Create and subscribe socket to discovery publishers
@@ -161,7 +227,7 @@ class Cluster():
         # Until signaled to exit
         while not self.fence.is_set():
             # Wait for message
-            sockets = dict(poller.poll(self.interval * 1000))  # ms
+            sockets = dict(poller.poll(self.announce_interval * 1000))  # ms
 
             # If we got one
             if sub in sockets:
