@@ -19,7 +19,7 @@ def synchronized(access):
             if not hasattr(self, "_lock"):
                 setattr(self, "_lock", threading.RLock())
             with getattr(self, "_lock"):
-                return method(*args, **kwargs)
+                return method(self, *args, **kwargs)
         return synced
     return decorator
 
