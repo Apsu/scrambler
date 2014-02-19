@@ -94,11 +94,8 @@ class Cluster():
                 # Convert to object
                 value = json.loads(value)
 
-                # Add or update our state dict entry
-                if key in self.cluster_state:
-                    self.cluster_state[key].update(value)
-                else:
-                    self.cluster_state[key] = value
+                # Add to cluster state dict
+                self.cluster_state[key] = value
 
                 # Tell the queue we're done
                 self.cluster_queue.task_done()
