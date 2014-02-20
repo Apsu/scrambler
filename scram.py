@@ -61,7 +61,7 @@ def synchronized(access):
     def decorator(method):
         def synced(self, *args, **kwargs):
             if not hasattr(self, "_rwlock"):
-                setattr(self, "_rwlock", )
+                setattr(self, "_rwlock", RWLock())
             rwlock = getattr(self, "_rwlock")
             if access == "read":
                 rwlock.read_acquire()
