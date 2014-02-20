@@ -21,8 +21,9 @@ def synchronized(access):
             cond = getattr(self, "_cond")
             with cond:
                 if access == "read":
+                    result = method(self, *args, **kwargs)
                     cond.wait()
-                    return method(self, *args, **kwargs)
+                    return result
                 elif access == "write":
                     result = method(self, *args, **kwargs)
                     cond.notify()
@@ -158,7 +159,8 @@ class Cluster():
 
             # Show cluster status
             print(
-                "Cluster State: {}".format(
+                "[{}] Cluster State: {}".format(
+                    time.ctime(),
                     json.dumps(
                         dict(self.cluster_state),  # Coerce for serializing
                         indent=True
@@ -248,7 +250,7 @@ class Cluster():
                 # If not our own reflection
                 if host != self.hostname:
                     # Show it
-                    print("{} => {}".format(host, msg))
+                    print("[{}] {} => {}".format(time.ctim(), host, msg))
 
                     # Handoff to update thread
                     self.cluster_queue.put([host, msg])
