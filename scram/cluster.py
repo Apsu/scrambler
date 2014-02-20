@@ -45,8 +45,14 @@ class Cluster():
         self.hostname = platform.node()
         self.address = socket.gethostbyname(socket.getfqdn())
 
-        # Thread-safe state object
-        self.cluster_state = State(self.address, self.hostname)
+        # Thread-safe state object; initialize ourself
+        self.cluster_state = State(
+            {
+                self.hostname: {
+                    "address": self.address
+                }
+            }
+        )
 
         # Cluster state queue
         self.cluster_queue = Queue.Queue()
