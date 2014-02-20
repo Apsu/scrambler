@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import print_function
 
 import json
@@ -10,113 +8,7 @@ import threading
 import time
 import zmq
 
-
-class RWLock():
-    "Read/Write lock helper with writer prioritization"
-
-    def __init__(self):
-        self.rlock = threading.Lock()   # Reader lock
-        self.wlock = threading.Lock()   # Writer lock
-        self.fence = threading.Event()  # Reader fence to prioritize writers
-
-        # Trap readers when cleared; set initially
-        self.fence.set()
-
-    def read_acquire(self):
-        # Wait until the fence is open
-        while not self.fence.is_set():
-            self.fence.wait(1)  # Short timeout so our thread can still exit
-
-        # Acquire reader
-        self.rlock.acquire()
-
-    def read_release(self):
-        # Release to next reader
-        self.rlock.release()
-
-    def write_acquire(self):
-        # Acquire writer
-        self.wlock.acquire()
-
-        # Shut the fence to trap new readers
-        self.fence.clear()
-
-        # Wait for current reader and acquire
-        self.rlock.acquire()
-
-    def write_release(self):
-        # Release to readers
-        self.rlock.release()
-
-        # Open the fence for readers so at least one can get through
-        self.fence.set()
-
-        # Release to writers
-        self.wlock.release()
-
-
-def synchronized(access):
-    "Thread-safe locking method decorator"
-
-    def decorator(method):
-        def synced(self, *args, **kwargs):
-            if not hasattr(self, "_rwlock"):
-                setattr(self, "_rwlock", RWLock())
-            rwlock = getattr(self, "_rwlock")
-            if access == "read":
-                rwlock.read_acquire()
-                result = method(self, *args, **kwargs)
-                rwlock.read_release()
-                return result
-            elif access == "write":
-                rwlock.write_acquire()
-                result = method(self, *args, **kwargs)
-                rwlock.write_release()
-                return result
-        return synced
-    return decorator
-
-
-class State():
-    "Thread-safe cluster state store"
-
-    def __init__(self, address, hostname):
-        # Store parameters
-        self.address = address
-        self.hostname = hostname
-
-        # Initialize state with ourself
-        self._state = {
-            self.hostname: {
-                "timestamp": time.time(),
-                "address": self.address
-            }
-        }
-
-    @synchronized("write")
-    def __iter__(self):
-        for item in self._state.items():
-            yield item
-
-    @synchronized("read")
-    def __getitem__(self, key):
-        return self._state[key]
-
-    @synchronized("write")
-    def __setitem__(self, key, value):
-        self._state[key] = value
-
-    @synchronized("write")
-    def __delitem__(self, key):
-        del self._state[key]
-
-    @synchronized("write")
-    def update(self, item):
-        self._state.update(item)
-
-    @synchronized("read")
-    def __repr__(self):
-        return repr(self._state)
+from scram.state import State
 
 
 class Cluster():
@@ -186,8 +78,7 @@ class Cluster():
             self.fence.set()
 
             # Wait on them
-            for thread in self.threads:
-                thread.join()
+            map(lambda x: x.join(), self.threads)
 
             print("Exiting.")
 
@@ -199,7 +90,7 @@ class Cluster():
             # Check for zombies and headshot them
             for node, state in self.cluster_state:
                 if time.time() - state["timestamp"] > self.zombie_interval:
-                    print("Pruning zombie: {}".format(node))
+                    print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                     del self.cluster_state[node]
 
             # Show cluster status
@@ -294,17 +185,8 @@ class Cluster():
 
                 # If not our own reflection
                 if host != self.hostname:
-                    # Show it
-                    print("[{}] {} => {}".format(time.ctime(), host, msg))
-
                     # Handoff to update thread
                     self.cluster_queue.put([host, msg])
             # Timed out, carry on
             else:
                 continue
-
-
-# Entry point
-if __name__ == "__main__":
-    # Join and track cluster
-    Cluster(interface="eth2")
