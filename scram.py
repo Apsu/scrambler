@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import scram
+import scram.main
 
 
 # Entry point
