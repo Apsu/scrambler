@@ -146,7 +146,9 @@ class Cluster():
         context = zmq.Context()
         pub = context.socket(zmq.PUB)
         pub.setsockopt(zmq.LINGER, 0)
-        pub.setsockopt(zmq.HWM, 1000)  # ZMQ 2.x high watermark
+        # If using ZMQ 2.x, set high watermark
+        if zmq.zmq_version_info()[0] == 2:
+            pub.setsockopt(zmq.HWM, 1000)
         pub.bind(self.connection)
 
         # Until signaled to exit
@@ -173,7 +175,9 @@ class Cluster():
         context = zmq.Context()
         sub = context.socket(zmq.SUB)
         sub.setsockopt(zmq.SUBSCRIBE, "cluster")
-        sub.setsockopt(zmq.HWM, 1000)  # ZMQ 2.x high watermark
+        # If using ZMQ 2.x, set high watermark
+        if zmq.zmq_version_info()[0] == 2:
+            pub.setsockopt(zmq.HWM, 1000)
         sub.connect(self.connection)
 
         # Message ready poller
