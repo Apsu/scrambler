@@ -21,8 +21,8 @@ def synchronized(access):
             cond = getattr(self, "_cond")
             with cond:
                 if access == "read":
-                    result = method(self, *args, **kwargs)
                     cond.wait()
+                    result = method(self, *args, **kwargs)
                     return result
                 elif access == "write":
                     result = method(self, *args, **kwargs)
