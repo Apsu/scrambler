@@ -1,4 +1,4 @@
-from scram.threading import synchronized
+from scram.synchronized import synchronized
 
 
 class State():
