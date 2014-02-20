@@ -49,6 +49,7 @@ class Cluster():
         self.cluster_state = State(
             {
                 self.hostname: {
+                    "timestamp": time.time(),
                     "address": self.address
                 }
             }
