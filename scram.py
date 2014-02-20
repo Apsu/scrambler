@@ -18,7 +18,8 @@ def synchronized(access):
         def synced(self, *args, **kwargs):
             if not hasattr(self, "_cond"):
                 setattr(self, "_cond", threading.Condition())
-            with getattr(self, "_cond") as cond:
+            cond = getattr(self, "_cond")
+            with cond:
                 if access == "read":
                     cond.wait()
                     return method(self, *args, **kwargs)
