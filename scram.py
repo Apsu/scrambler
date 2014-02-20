@@ -156,6 +156,16 @@ class Cluster():
                     print("Pruning zombie: {}".format(node))
                     del self.cluster_state[node]
 
+            # Show cluster status
+            print(
+                "Cluster State: {}".format(
+                    json.dumps(
+                        dict(self.cluster_state),  # Coerce for serializing
+                        indent=True
+                    )
+                )
+            )
+
             # Wait interval before next check
             self.fence.wait(self.update_interval)
 
@@ -176,16 +186,6 @@ class Cluster():
 
                 # Tell the queue we're done
                 self.cluster_queue.task_done()
-
-                # Show eet
-                print(
-                    "Cluster State: {}".format(
-                        json.dumps(
-                            dict(self.cluster_state),  # Coerce for serializing
-                            indent=True
-                        )
-                    )
-                )
             # Catch empty queue timeout
             except Queue.Empty:
                 # TODO: Do something useful here?
