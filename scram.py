@@ -26,7 +26,7 @@ def synchronized(access):
                     return result
                 elif access == "write":
                     result = method(self, *args, **kwargs)
-                    cond.notify()
+                    cond.notify_all()
                     return result
         return synced
     return decorator
@@ -250,7 +250,7 @@ class Cluster():
                 # If not our own reflection
                 if host != self.hostname:
                     # Show it
-                    print("[{}] {} => {}".format(time.ctim(), host, msg))
+                    print("[{}] {} => {}".format(time.ctime(), host, msg))
 
                     # Handoff to update thread
                     self.cluster_queue.put([host, msg])
