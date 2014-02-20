@@ -14,13 +14,18 @@ import zmq
 def synchronized(access):
     "Thread-safe locking method decorator"
 
-    # TODO: Make use of access and switch to condition variable
     def decorator(method):
         def synced(self, *args, **kwargs):
-            if not hasattr(self, "_lock"):
-                setattr(self, "_lock", threading.RLock())
-            with getattr(self, "_lock"):
-                return method(self, *args, **kwargs)
+            if not hasattr(self, "_cond"):
+                setattr(self, "_cond", threading.Condition())
+            with getattr(self, "_cond") as cond:
+                if access == "read":
+                    cond.wait()
+                    return method(self, *args, **kwargs)
+                elif access == "write":
+                    result = method(self, *args, **kwargs)
+                    cond.notify()
+                    return result
         return synced
     return decorator
 
@@ -63,8 +68,8 @@ class State():
         self._state.update(item)
 
     @synchronized("read")
-    def __dict__(self):
-        return dict(self._state)
+    def __repr__(self):
+        return repr(self._state)
 
 
 class Cluster():
@@ -175,7 +180,7 @@ class Cluster():
                 print(
                     "Cluster State: {}".format(
                         json.dumps(
-                            self.cluster_state,
+                            dict(self.cluster_state),  # Coerce for serializing
                             indent=True
                         )
                     )
