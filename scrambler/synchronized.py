@@ -1,4 +1,4 @@
-from scram.rwlock import RWLock
+from scrambler.rwlock import RWLock
 
 
 def synchronized(access):

@@ -1,10 +1,10 @@
-SCRAM Clusters Resources Appropriately. Mostly.
-=====
+Scrambler
+===
 
 wat?
 ---
 
-SCRAM is a Simple Cluster Resource Availability Manager, and helps orchestrate cluster nodes and their resources. As fun as the acronym is, I'll probably just be calling it Scram for convenience.
+Scrambler is a decentralized Docker cluster manager, and helps orchestrate cluster nodes and their resources.
 
 The executive summary design goal is to provide a simple agent with minimal dependencies that can:
 
@@ -21,10 +21,17 @@ Primarily, resources are docker containers.
 
 ZeroMQ
 ---
-ZMQ is used to cluster Scram agents in a full-mesh so cluster resource state and policy can be replicated, as well as cluster state itself.
+ZMQ is used to cluster Scrambler agents in a full-mesh so cluster resource state and policy can be replicated, as well as cluster state itself.
 
 Discovery
 ---
 Discovery and heartbeating is accomplished by virtue of state update messages sent over the
 multicast pub-sub ZMQ mesh mentioned above. Currently, ZMQ's EPGM protocol is being used for
 robust, reliable dynamic discovery and state transfer.
+
+How do?
+===
+
+To try it out, fire up `./setup.py install`, and you'll get a binary named `scramble` in `/usr/local/bin`.
+
+Run `scramble $interface` for the interface you want to talk to other scramblers on.

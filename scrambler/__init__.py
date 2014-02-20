@@ -1,6 +1,6 @@
 import sys
 
-from scram.cluster import Cluster
+from scrambler.cluster import Cluster
 
 
 # Entry point

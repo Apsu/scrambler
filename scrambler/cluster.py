@@ -8,7 +8,7 @@ import threading
 import time
 import zmq
 
-from scram.state import State
+from scrambler.state import State
 
 
 class Cluster():

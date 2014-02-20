@@ -1,4 +1,4 @@
-from scram.synchronized import synchronized
+from scrambler.synchronized import synchronized
 
 
 class State():
