@@ -30,9 +30,9 @@ To try it out, fire up `./setup.py install`, and you'll get a binary named `scra
 
 > Note: The installer will use pip to build the resources it needs, so on Ubuntu you'll need these
 > packages before installing Scrambler:
->     - python-pip
->     - python-dev
->     - build-essential
->     - libzmq-dev
+> - python-pip
+> - python-dev
+> - build-essential
+> - libzmq-dev
 
 Run `scramble $interface` for the interface you want to talk to other scramblers on.
