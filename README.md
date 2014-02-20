@@ -1,9 +1,6 @@
 Scrambler
 ===
 
-wat?
----
-
 Scrambler is a decentralized Docker cluster manager, and helps orchestrate cluster nodes and their resources.
 
 The executive summary design goal is to provide a simple agent with minimal dependencies that can:
