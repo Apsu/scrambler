@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import scram.main
+from scram import main
 
 
 # Entry point
 if __name__ == "__main__":
-    scram.main("eth2")
+    main("eth2")
