@@ -13,7 +13,7 @@ The executive summary design goal is to provide a simple agent with minimal depe
 * Do this automatically, as soon as those machines are plugged into the same network
 * Handle failures, partitioning, or controlled removal of machines from the cluster
 
-Once clustered, the agents will manage their colocated resources based on policy shared between via the cluster mesh.
+Once clustered, the agents will manage their colocated resources based on policy shared between them via the cluster mesh.
 
 Docker
 ---
@@ -21,7 +21,7 @@ Primarily, resources are docker containers.
 
 ZeroMQ
 ---
-ZMQ is used to cluster Scrambler agents in a full-mesh so cluster resource state and policy can be replicated, as well as cluster state itself.
+ZMQ is used to cluster Scrambler agents in a full-mesh so resource state and policy can be replicated, as well as cluster state itself.
 
 Discovery
 ---
