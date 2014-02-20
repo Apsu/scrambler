@@ -177,7 +177,7 @@ class Cluster():
         sub.setsockopt(zmq.SUBSCRIBE, "cluster")
         # If using ZMQ 2.x, set high watermark
         if zmq.zmq_version_info()[0] == 2:
-            pub.setsockopt(zmq.HWM, 1000)
+            sub.setsockopt(zmq.HWM, 1000)
         sub.connect(self.connection)
 
         # Message ready poller
