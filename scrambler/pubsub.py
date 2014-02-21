@@ -7,13 +7,15 @@ class PubSub():
 
     def __init__(
         self,
+        keys=["message"],      # List of keys to subscribe to
         hostname="localhost",  # Our hostname
         group="224.0.0.127",   # Multicast address; default is link-local
         port=4999,             # Multicast port
         interface=None,        # Physical interface to use
-        protocol="epgm"       # Unprivileged reliable multicast protocol
+        protocol="epgm"        # Unprivileged reliable multicast protocol
     ):
         # Store parameters
+        self.keys = keys
         self.hostname = hostname
         self.group = group
         self.port = port
@@ -37,7 +39,7 @@ class PubSub():
 
         # Create and subscribe socket to publishers
         self.sub = self.context.socket(zmq.SUB)
-        for key in ["cluster", "policy", "event"]:
+        for key in self.keys:
             self.sub.setsockopt(zmq.SUBSCRIBE, key)
 
         # If using ZMQ 2.x, set high watermark

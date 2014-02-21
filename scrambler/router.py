@@ -1,25 +1,33 @@
 import json
-import time
 
 
 class Router():
+    "Router helper to plumb message keys to data stores"
+
+    def __init__(self):
+        # Hook dict
+        self.hooks = {}
+
+    def add_hook(self, key, f):
+        "Add hook function to list of hooks, by key"
+
+        if key not in self.hooks:
+            self.hooks[key] = [f]
+        elif f not in self.hooks[key]:
+            self.hooks[key].append(f)
+
+    def del_hook(self, key, f):
+        "Delete hook from list of hooks, by key"
+
+        if key in self.hooks:
+            self.hooks[key].remove(f)
+
     def route(self, key, node, data):
+        "Route data through appropriate hooks"
+
         # Convert to object
         data = json.loads(data)
 
-        # If cluster message
-        if key == "cluster":
-            # Update timestamp
-            data["timestamp"] = time.time()
-
-        # Update store
-        self.put(key, data, node)
-
-    def get(self, key, node=None):
-        return getattr(self, key)[node] if node else getattr(self, key)
-
-    def put(self, key, data, node=None):
-        if node:
-            getattr(self, key)[node].update(data)
-        else:
-            getattr(self, key).update(data)
+        # Run hooks by key
+        for hook in self.hooks[key]:
+            hook(key, node, data)

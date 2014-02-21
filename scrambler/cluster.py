@@ -10,7 +10,7 @@ from scrambler.router import Router
 from scrambler.store import Store
 
 
-class Cluster(Router):
+class Cluster():
     "Manage cluster discovery and messaging"
 
     def __init__(
@@ -30,29 +30,46 @@ class Cluster(Router):
         self.update_interval = update_interval
         self.zombie_interval = zombie_interval
 
-        # Cluster state
-        self.cluster = Store(
-            {
-                self.hostname: {
-                    "address": self.address
+        # Thread-safe data stores
+        self.stores = {
+            "cluster": Store(
+                {
+                    self.hostname: {
+                        "address": self.address
+                    }
                 }
-            }
-        )
-
-        # Cluster policy
-        self.policy = Store(
-            {
-                self.hostname: {
-                    "policies": []
+            ),
+            "policy": Store(
+                {
+                    self.hostname: {
+                        "policies": []
+                    }
                 }
-            }
-        )
+            )
+        }
 
         # Message queue
         self.queue = Queue.Queue()
 
+        # Message router
+        self.router = Router()
+
+        # Add hook for "cluster" message to timestamp them
+        self.router.add_hook(
+            "cluster",
+            lambda key, node, data: data.update({"timestamp": time.time()})
+        )
+
+        # Add default hooks to store data received for each key
+        for store in self.stores.keys():
+            self.router.add_hook(
+                store,
+                lambda key, node, data: self.stores[key].update(data)
+            )
+
         # ZMQ PUB/SUB helper
         self.pubsub = PubSub(
+            keys=self.stores.keys(),
             hostname=self.hostname,
             interface=self.interface
         )
@@ -104,20 +121,20 @@ class Cluster(Router):
         # Until signaled to exit
         while not self.fence.is_set():
             # Check for zombies and headshot them
-            for node, state in self.cluster:
+            for node, state in self.stores["cluster"]:
                 if (
                     node != self.hostname  # We're never a zombie, honest
                     and time.time() - state["timestamp"] > self.zombie_interval
                 ):
                     print("[{}] Pruning zombie: {}".format(time.ctime(), node))
-                    del self.cluster[node]
+                    del self.stores["cluster"][node]
 
             # Show cluster status
             print(
                 "[{}] Cluster State: {}".format(
                     time.ctime(),
                     json.dumps(
-                        dict(self.cluster),  # Coerce for serializing
+                        dict(self.stores["cluster"]),  # Coerce for serializing
                         indent=4
                     )
                 )
@@ -133,7 +150,7 @@ class Cluster(Router):
         while not self.fence.is_set():
             try:
                 # Wait for updates and route them by key
-                self.route(*self.queue.get(timeout=1))
+                self.router.route(*self.queue.get(timeout=1))
 
                 # Tell the queue we're done
                 self.queue.task_done()
@@ -153,7 +170,7 @@ class Cluster(Router):
             # Publish announcement with our state
             self.publish(
                 "cluster",
-                self.cluster[self.hostname]
+                self.stores["cluster"][self.hostname]
             )
 
             # Wait the interval
