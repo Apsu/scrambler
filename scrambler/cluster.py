@@ -64,7 +64,7 @@ class Cluster():
         for store in self.stores.keys():
             self.router.add_hook(
                 store,
-                lambda key, node, data: self.stores[key].update(data)
+                lambda key, node, data: self.stores[key].update({node: data})
             )
 
         # ZMQ PUB/SUB helper
@@ -135,6 +135,17 @@ class Cluster():
                     time.ctime(),
                     json.dumps(
                         dict(self.stores["cluster"]),  # Coerce for serializing
+                        indent=4
+                    )
+                )
+            )
+
+            # Show cluster policy
+            print(
+                "[{}] Cluster Policy: {}".format(
+                    time.ctime(),
+                    json.dumps(
+                        dict(self.stores["policy"]),  # Coerce for serializing
                         indent=4
                     )
                 )

@@ -64,14 +64,9 @@ class PubSub():
             # Wait for message
             sockets = dict(poller.poll(interval * 1000))  # In ms
 
-            # If we got one
+            # Yield 'em if you've got 'em
             if self.sub in sockets:
-                # Get message pieces
-                key, host, data = self.sub.recv_multipart()
-
-                # If not our own reflection, yield message
-                if host != self.hostname:
-                    yield key, host, data
+                yield self.sub.recv_multipart()
             # Timed out, yield None
             else:
                 yield None
