@@ -9,12 +9,15 @@ from scrambler.scheduler import RoundRobin
 class Manager():
     "Policy-based Docker container manager"
 
-    def __init__(self):
+    def __init__(self, interface="eth2"):
         # Spawn a Docker client object
         self.client = docker.Client()
 
         # Scheduler algorithm
         self.scheduler = RoundRobin()
+
+        # Store
+        self.interface = interface
 
         # Get hostname and address
         self.hostname = platform.node()
@@ -24,7 +27,7 @@ class Manager():
         self.cluster = Cluster(
             hostname=self.hostname,
             address=self.address,
-            interface="eth2"
+            interface=self.interface
         )
 
     def reschedule(self):
