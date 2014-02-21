@@ -54,7 +54,6 @@ class Cluster(Router):
         # ZMQ PUB/SUB helper
         self.pubsub = PubSub(
             hostname=self.hostname,
-            address=self.address,
             interface=self.interface
         )
 
