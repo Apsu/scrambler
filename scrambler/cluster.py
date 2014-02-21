@@ -48,9 +48,6 @@ class Cluster(Router):
             }
         )
 
-        # Message router
-        self.router = Router(self.cluster, self.policy)
-
         # Message queue
         self.queue = Queue.Queue()
 
