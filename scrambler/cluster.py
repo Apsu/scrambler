@@ -1,67 +1,70 @@
 from __future__ import print_function
 
 import json
-import platform
 import Queue
-import socket
 import threading
 import time
-import zmq
 
-from scrambler.state import State
+from scrambler.pubsub import PubSub
+from scrambler.router import Router
+from scrambler.store import Store
 
 
-class Cluster():
-    "Participate in cluster discovery and state"
+class Cluster(Router):
+    "Manage cluster discovery and messaging"
 
     def __init__(
         self,
-        bind="224.0.0.127",   # Multicast address; default is link-local
-        port=4999,            # Multicast port
-        interface=None,       # Physical interface to use
-        protocol="epgm",      # Unprivileged reliable multicast protocol
+        hostname="localhost",  # Our hostname
+        address="127.0.0.1",   # Our unicast address
+        interface="eth0",     # Physical interface to use
         announce_interval=1,  # How often to announce ourselves
         update_interval=5,    # How often to update our cluster state view
         zombie_interval=15    # How long after update to consider node dead
     ):
         # Store parameters
-        self.bind = bind
-        self.port = port
+        self.hostname = hostname
+        self.address = address
         self.interface = interface
-        self.protocol = protocol
         self.announce_interval = announce_interval
         self.update_interval = update_interval
         self.zombie_interval = zombie_interval
 
-        # Build connection string
-        self.connection = "{}://{}{}:{}".format(
-            protocol,
-            interface + ";" if interface else "",
-            bind,
-            port
-        )
-
-        # Store hostname and address
-        self.hostname = platform.node()
-        self.address = socket.gethostbyname(socket.getfqdn())
-
-        # Thread-safe state object; initialize ourself
-        self.cluster_state = State(
+        # Cluster state
+        self.cluster = Store(
             {
                 self.hostname: {
-                    "timestamp": time.time(),
-                    "address": self.address
+                    "address": self.address,
                 }
             }
         )
 
-        # Cluster state queue
-        self.cluster_queue = Queue.Queue()
+        # Cluster policy
+        self.policy = Store(
+            {
+                self.hostname: {
+                    "policies": []
+                }
+            }
+        )
+
+        # Message router
+        self.router = Router(self.cluster, self.policy)
+
+        # Message queue
+        self.queue = Queue.Queue()
+
+        # ZMQ PUB/SUB helper
+        self.pubsub = PubSub(
+            hostname=self.hostname,
+            address=self.address,
+            interface=self.interface
+        )
 
         # Thread fence
         self.fence = threading.Event()
 
-        # Thread pair
+        # Thread pool
         self.threads = []
 
         # Add threads to pool
@@ -89,24 +92,34 @@ class Cluster():
 
             print("Exiting.")
 
+    def publish(self, key, data):
+        "Publish key:data from us"
+
+        self.pubsub.publish(key, self.hostname, data)
+
+    def receive(self, interval):
+        "Receive a key:node:data message with interval timeout"
+
+        return self.pubsub.receive(interval)
+
     def update(self):
         "Thread for periodically updating cluster state dict"
 
         # Until signaled to exit
         while not self.fence.is_set():
             # Check for zombies and headshot them
-            for node, state in self.cluster_state:
+            for node, state in self.cluster:
                 if time.time() - state["timestamp"] > self.zombie_interval:
                     print("[{}] Pruning zombie: {}".format(time.ctime(), node))
-                    del self.cluster_state[node]
+                    del self.cluster[node]
 
             # Show cluster status
             print(
                 "[{}] Cluster State: {}".format(
                     time.ctime(),
                     json.dumps(
-                        dict(self.cluster_state),  # Coerce for serializing
-                        indent=True
+                        dict(self.cluster),  # Coerce for serializing
+                        indent=4
                     )
                 )
             )
@@ -120,17 +133,11 @@ class Cluster():
         # Until signaled to exit
         while not self.fence.is_set():
             try:
-                # Wait for updates received from other nodes
-                key, value = self.cluster_queue.get(timeout=1)
-
-                # Convert to object
-                value = json.loads(value)
-
-                # Add to cluster state dict
-                self.cluster_state[key] = value
+                # Wait for updates and route them by key
+                self.route(self.queue.get(timeout=1))
 
                 # Tell the queue we're done
-                self.cluster_queue.task_done()
+                self.queue.task_done()
             # Catch empty queue timeout
             except Queue.Empty:
                 # TODO: Do something useful here?
@@ -142,62 +149,26 @@ class Cluster():
     def announce(self):
         "Thread for announcing our state to the cluster"
 
-        # Create and bind publisher socket
-        context = zmq.Context()
-        pub = context.socket(zmq.PUB)
-        pub.setsockopt(zmq.LINGER, 0)
-        # If using ZMQ 2.x, set high watermark
-        if zmq.zmq_version_info()[0] == 2:
-            pub.setsockopt(zmq.HWM, 1000)
-        pub.bind(self.connection)
-
         # Until signaled to exit
         while not self.fence.is_set():
-            # Update our timestamp
-            self.cluster_state[self.hostname]["timestamp"] = time.time()
-
             # Publish announcement with our state
-            pub.send_multipart(
-                [
-                    "cluster",
-                    self.hostname,
-                    json.dumps(self.cluster_state[self.hostname])
-                ]
+            self.publish(
+                "cluster",
+                self.cluster[self.hostname]
             )
 
             # Wait the interval
             time.sleep(self.announce_interval)
 
     def listen(self):
-        "Thread for receiving state from the cluster"
+        "Thread for receiving messages from the cluster"
 
-        # Create and subscribe socket to discovery publishers
-        context = zmq.Context()
-        sub = context.socket(zmq.SUB)
-        sub.setsockopt(zmq.SUBSCRIBE, "cluster")
-        # If using ZMQ 2.x, set high watermark
-        if zmq.zmq_version_info()[0] == 2:
-            sub.setsockopt(zmq.HWM, 1000)
-        sub.connect(self.connection)
+        # Get messages from subscriber generator
+        for message in self.receive(self.announce_interval):
+            # If we got one, queue it
+            if message:
+                self.queue.put(message)
 
-        # Message ready poller
-        poller = zmq.Poller()
-        poller.register(sub, zmq.POLLIN)
-
-        # Until signaled to exit
-        while not self.fence.is_set():
-            # Wait for message
-            sockets = dict(poller.poll(self.announce_interval * 1000))  # In ms
-
-            # If we got one
-            if sub in sockets:
-                # Get message pieces
-                key, host, msg = sub.recv_multipart()
-
-                # If not our own reflection
-                if host != self.hostname:
-                    # Handoff to update thread
-                    self.cluster_queue.put([host, msg])
-            # Timed out, carry on
-            else:
-                continue
+            # If signaled to exit, bail
+            if self.fence.is_set():
+                break
