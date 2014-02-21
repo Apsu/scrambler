@@ -106,8 +106,8 @@ class Cluster(Router):
             # Check for zombies and headshot them
             for node, state in self.cluster:
                 if (
-                    time.time() - state["timestamp"] > self.zombie_interval
-                    and node != self.hostname  # We're never a zombie, honest
+                    node != self.hostname  # We're never a zombie, honest
+                    and time.time() - state["timestamp"] > self.zombie_interval
                 ):
                     print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                     del self.cluster[node]
@@ -133,7 +133,7 @@ class Cluster(Router):
         while not self.fence.is_set():
             try:
                 # Wait for updates and route them by key
-                self.route(self.queue.get(timeout=1))
+                self.route(*self.queue.get(timeout=1))
 
                 # Tell the queue we're done
                 self.queue.task_done()
