@@ -34,7 +34,7 @@ class Cluster(Router):
         self.cluster = Store(
             {
                 self.hostname: {
-                    "address": self.address,
+                    "address": self.address
                 }
             }
         )
@@ -105,7 +105,10 @@ class Cluster(Router):
         while not self.fence.is_set():
             # Check for zombies and headshot them
             for node, state in self.cluster:
-                if time.time() - state["timestamp"] > self.zombie_interval:
+                if (
+                    time.time() - state["timestamp"] > self.zombie_interval
+                    and node != self.hostname  # We're never a zombie, honest
+                ):
                     print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                     del self.cluster[node]
 
