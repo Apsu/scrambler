@@ -66,17 +66,16 @@ class Cluster():
             lambda key, node, data: data.update(
                 {
                     "master":
-                        min(self.stores["cluster"].keys()) == node
+                    min(self.stores[key].keys()) == node
                 }
             )
         )
 
-        # Add default hooks to store data received for each key
-        for store in self.stores.keys():
-            self.router.add_hook(
-                store,
-                lambda key, node, data: self.stores[key].update({node: data})
-            )
+        # Add hook for "cluster" message to store data by node
+        self.router.add_hook(
+            "cluster",
+            lambda key, node, data: self.stores[key].update({node: data})
+        )
 
         # ZMQ PUB/SUB helper
         self.pubsub = PubSub(
@@ -145,9 +144,18 @@ class Cluster():
                 for node, state in self.stores["cluster"]:
                     if (
                         node != self.hostname  # We're never a zombie, honest
-                        and time.time() - state["timestamp"] > self.zombie_interval
+                        and (
+                            time.time()
+                            - state["timestamp"]
+                            > self.zombie_interval
+                        )
                     ):
-                        print("[{}] Pruning zombie: {}".format(time.ctime(), node))
+                        print(
+                            "[{}] Pruning zombie: {}".format(
+                                time.ctime(),
+                                node
+                            )
+                        )
                         del self.stores["cluster"][node]
                         continue
 
@@ -156,7 +164,8 @@ class Cluster():
                     "[{}] Cluster State: {}".format(
                         time.ctime(),
                         json.dumps(
-                            dict(self.stores["cluster"]),  # Coerce for serializing
+                            # Coerce for serializing
+                            dict(self.stores["cluster"]),
                             indent=4
                         )
                     )
@@ -167,7 +176,8 @@ class Cluster():
                     "[{}] Cluster Policy: {}".format(
                         time.ctime(),
                         json.dumps(
-                            dict(self.stores["policy"]),  # Coerce for serializing
+                            # Coerce for serializing
+                            dict(self.stores["policy"]),
                             indent=4
                         )
                     )
