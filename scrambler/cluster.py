@@ -138,11 +138,14 @@ class Cluster():
                     ):
                         print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                         del self.stores["cluster"][node]
+
+                # Elect/depose ourselves as master if/not least lexical hostname
                 self.stores["cluster"].update(
                     {
-                        "master": True
-                        if min(self.stores["cluster"].keys()) == self.hostname
-                        else False
+                        self.hostname: {
+                            "master":
+                            min(self.stores["cluster"].keys()) == self.hostname
+                        }
                     }
                 )
 
