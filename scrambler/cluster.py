@@ -93,15 +93,26 @@ class Cluster():
             # While the threads are alive, join with timeout
             while any(map(lambda x: x.is_alive(), self.threads)):
                 map(lambda x: x.join(1), self.threads)
-        # Handle it
+        # Handle ^C
+        except KeyboardInterrupt:
+            print("Exiting on SIGINT.")
+        # Anything else
         except Exception as e:
-            print("Exiting due to: {}. Waiting on threads...".format(e))
+            print("Exiting due to: {}.".format(e))
+        # Always do the needful
+        finally:
+            self.exit()
 
-            # Signal fence so threads exit
-            self.fence.set()
+    def exit(self):
+        "Signal threads to exit and wait on them"
 
-            # Wait on them
-            map(lambda x: x.join(), self.threads)
+        print("Waiting on threads...")
+
+        # Signal fence so threads exit
+        self.fence.set()
+
+        # Wait on them
+        map(lambda x: x.join(), self.threads)
 
     def publish(self, key, data):
         "Publish key:data from us"
@@ -157,6 +168,11 @@ class Cluster():
                         )
                     )
                 )
+            except KeyboardInterrupt:
+                raise
+            # Print anything else and continue
+            except Exception as e:
+                print("Exception in update(): {}".format(e))
             finally:
                 # Wait interval before next check
                 self.fence.wait(self.update_interval)
@@ -176,9 +192,11 @@ class Cluster():
             except Queue.Empty:
                 # TODO: Do something useful here?
                 continue
+            except KeyboardInterrupt:
+                raise
             # Print anything else and continue
             except Exception as e:
-                print("Exception in announce(): {}".format(e))
+                print("Exception in handle(): {}".format(e))
 
     def announce(self):
         "Thread for announcing our state to the cluster"
@@ -191,10 +209,12 @@ class Cluster():
                     "cluster",
                     self.stores["cluster"][self.hostname]
                 )
+            except KeyboardInterrupt:
+                raise
             # Print anything else and continue
             except Exception as e:
                 print("Exception in announce(): {}".format(e))
-            finally:
+            else:
                 # Wait the interval
                 time.sleep(self.announce_interval)
 
@@ -207,10 +227,12 @@ class Cluster():
                 # If we got one, queue it
                 if message:
                     self.queue.put(message)
+            except KeyboardInterrupt:
+                raise
             # Print anything else and continue
             except Exception as e:
-                print("Exception in announce(): {}".format(e))
-            finally:
+                print("Exception in listen(): {}".format(e))
+            else:
                 # If signaled to exit, bail
                 if self.fence.is_set():
                     break
