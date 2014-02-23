@@ -60,6 +60,17 @@ class Cluster():
             lambda key, node, data: data.update({"timestamp": time.time()})
         )
 
+        # Add hook for "cluster" message to elect/depose master
+        self.router.add_hook(
+            "cluster",
+            lambda key, node, data: data.update(
+                {
+                    "master":
+                        min(self.stores["cluster"].keys()) == node
+                }
+            )
+        )
+
         # Add default hooks to store data received for each key
         for store in self.stores.keys():
             self.router.add_hook(
@@ -138,16 +149,7 @@ class Cluster():
                     ):
                         print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                         del self.stores["cluster"][node]
-
-                    # Elect/depose master if/if not least lexical hostname
-                    self.stores["cluster"].update(
-                        {
-                            node: {
-                                "master":
-                                min(self.stores["cluster"].keys()) == node
-                            }
-                        }
-                    )
+                        continue
 
                 # Show cluster status
                 print(
