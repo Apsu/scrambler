@@ -9,7 +9,7 @@ class PubSub():
         self,
         keys=["message"],      # List of keys to subscribe to
         hostname="localhost",  # Our hostname
-        group="224.0.0.127",   # Multicast address; default is link-local
+        group="224.0.0.127",   # Multicast address; unassigned onlink default
         port=4999,             # Multicast port
         interface=None,        # Physical interface to use
         protocol="epgm"        # Unprivileged reliable multicast protocol
@@ -42,7 +42,7 @@ class PubSub():
         for key in self.keys:
             self.sub.setsockopt(zmq.SUBSCRIBE, key)
 
-        # If using ZMQ 2.x, set high watermark
+        # If using ZMQ 2.x, set high watermarks to same default as 3.x+
         if zmq.zmq_version_info()[0] == 2:
             self.pub.setsockopt(zmq.HWM, 1000)
             self.sub.setsockopt(zmq.HWM, 1000)

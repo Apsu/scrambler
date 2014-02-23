@@ -88,22 +88,20 @@ class Cluster():
         for thread in self.threads:
             thread.start()
 
-        # Catch ^C
+        # Catch anything that bubbles up
         try:
             # While the threads are alive, join with timeout
             while any(map(lambda x: x.is_alive(), self.threads)):
                 map(lambda x: x.join(1), self.threads)
         # Handle it
-        except KeyboardInterrupt:
-            print("Interrupted. Waiting on threads...")
+        except Exception as e:
+            print("Exiting due to: {}. Waiting on threads...".format(e))
 
             # Signal fence so threads exit
             self.fence.set()
 
             # Wait on them
             map(lambda x: x.join(), self.threads)
-
-            print("Exiting.")
 
     def publish(self, key, data):
         "Publish key:data from us"
@@ -120,39 +118,40 @@ class Cluster():
 
         # Until signaled to exit
         while not self.fence.is_set():
-            # Check for zombies and headshot them
-            for node, state in self.stores["cluster"]:
-                if (
-                    node != self.hostname  # We're never a zombie, honest
-                    and time.time() - state["timestamp"] > self.zombie_interval
-                ):
-                    print("[{}] Pruning zombie: {}".format(time.ctime(), node))
-                    del self.stores["cluster"][node]
+            try:
+                # Check for zombies and headshot them
+                for node, state in self.stores["cluster"]:
+                    if (
+                        node != self.hostname  # We're never a zombie, honest
+                        and time.time() - state["timestamp"] > self.zombie_interval
+                    ):
+                        print("[{}] Pruning zombie: {}".format(time.ctime(), node))
+                        del self.stores["cluster"][node]
 
-            # Show cluster status
-            print(
-                "[{}] Cluster State: {}".format(
-                    time.ctime(),
-                    json.dumps(
-                        dict(self.stores["cluster"]),  # Coerce for serializing
-                        indent=4
+                # Show cluster status
+                print(
+                    "[{}] Cluster State: {}".format(
+                        time.ctime(),
+                        json.dumps(
+                            dict(self.stores["cluster"]),  # Coerce for serializing
+                            indent=4
+                        )
                     )
                 )
-            )
 
-            # Show cluster policy
-            print(
-                "[{}] Cluster Policy: {}".format(
-                    time.ctime(),
-                    json.dumps(
-                        dict(self.stores["policy"]),  # Coerce for serializing
-                        indent=4
+                # Show cluster policy
+                print(
+                    "[{}] Cluster Policy: {}".format(
+                        time.ctime(),
+                        json.dumps(
+                            dict(self.stores["policy"]),  # Coerce for serializing
+                            indent=4
+                        )
                     )
                 )
-            )
-
-            # Wait interval before next check
-            self.fence.wait(self.update_interval)
+            finally:
+                # Wait interval before next check
+                self.fence.wait(self.update_interval)
 
     def handle(self):
         "Thread for handling cluster state messages"
@@ -169,33 +168,41 @@ class Cluster():
             except Queue.Empty:
                 # TODO: Do something useful here?
                 continue
-            # Don't die for anything else
-            else:
-                continue
+            # Print anything else and continue
+            except Exception as e:
+                print("Exception in announce(): {}".format(e))
 
     def announce(self):
         "Thread for announcing our state to the cluster"
 
         # Until signaled to exit
         while not self.fence.is_set():
-            # Publish announcement with our state
-            self.publish(
-                "cluster",
-                self.stores["cluster"][self.hostname]
-            )
-
-            # Wait the interval
-            time.sleep(self.announce_interval)
+            try:
+                # Publish announcement with our state
+                self.publish(
+                    "cluster",
+                    self.stores["cluster"][self.hostname]
+                )
+            # Print anything else and continue
+            except Exception as e:
+                print("Exception in announce(): {}".format(e))
+            finally:
+                # Wait the interval
+                time.sleep(self.announce_interval)
 
     def listen(self):
         "Thread for receiving messages from the cluster"
 
         # Get messages from subscriber generator
         for message in self.receive(self.announce_interval):
-            # If we got one, queue it
-            if message:
-                self.queue.put(message)
-
-            # If signaled to exit, bail
-            if self.fence.is_set():
-                break
+            try:
+                # If we got one, queue it
+                if message:
+                    self.queue.put(message)
+            # Print anything else and continue
+            except Exception as e:
+                print("Exception in announce(): {}".format(e))
+            finally:
+                # If signaled to exit, bail
+                if self.fence.is_set():
+                    break
