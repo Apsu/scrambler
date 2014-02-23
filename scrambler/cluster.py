@@ -138,13 +138,12 @@ class Cluster():
                     ):
                         print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                         del self.stores["cluster"][node]
-
-                # Try out fancy min() function
-                print(
-                    "[{}] First Lexical Hostname: {}".format(
-                        time.ctime(),
-                        min(self.stores["cluster"], key=self.stores["cluster"].get)
-                    )
+                self.stores["cluster"].update(
+                    {
+                        "master": True
+                        if min(self.stores["cluster"].keys()) == self.hostname
+                        else False
+                    }
                 )
 
                 # Show cluster status

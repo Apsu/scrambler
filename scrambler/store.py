@@ -17,6 +17,14 @@ class Store():
     def __getitem__(self, key):
         return self._store[key]
 
+    @synchronized("read")
+    def get(self, key, default=None):
+        return self._store[key] if key in self._store else default
+
+    @synchronized("read")
+    def keys(self):
+        return self._store.keys()
+
     @synchronized("write")
     def __setitem__(self, key, value):
         self._store[key] = value
