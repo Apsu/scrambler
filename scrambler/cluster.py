@@ -139,15 +139,15 @@ class Cluster():
                         print("[{}] Pruning zombie: {}".format(time.ctime(), node))
                         del self.stores["cluster"][node]
 
-                # Elect/depose ourselves as master if/not least lexical hostname
-                self.stores["cluster"].update(
-                    {
-                        self.hostname: {
-                            "master":
-                            min(self.stores["cluster"].keys()) == self.hostname
+                    # Elect/depose master if/if not least lexical hostname
+                    self.stores["cluster"].update(
+                        {
+                            node: {
+                                "master":
+                                min(self.stores["cluster"].keys()) == node
+                            }
                         }
-                    }
-                )
+                    )
 
                 # Show cluster status
                 print(
