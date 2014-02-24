@@ -37,6 +37,7 @@ class Cluster():
             "cluster": Store(
                 {
                     self.hostname: {
+                        "timestamp": time.time(),
                         "address": self.address
                     }
                 }
