@@ -1,34 +1,39 @@
 import json
+import threading
+import Queue
+import time
 import zmq
+
+from scrambler.auth import Auth
+from scrambler.store import Store
 
 
 class PubSub():
     "PUB/SUB interface class"
 
-    def __init__(
-        self,
-        keys=["message"],      # List of keys to subscribe to
-        hostname="localhost",  # Our hostname
-        group="224.0.0.127",   # Multicast address; unassigned onlink default
-        port=4999,             # Multicast port
-        interface=None,        # Physical interface to use
-        protocol="epgm"        # Unprivileged reliable multicast protocol
-    ):
-        # Store parameters
-        self.keys = keys
-        self.hostname = hostname
-        self.group = group
-        self.port = port
-        self.interface = interface
-        self.protocol = protocol
+    def __init__(self, config):
+        # Call super
+        super(PubSub, self).__init__()
+
+        # Store config items
+        self.hostname = config["hostname"]
+        self.group = config["group"]
+        self.port = config["port"]
+        self.interface = config["interface"]
+        self.protocol = config["protocol"]
+        self.cluster_key = config["cluster_key"]
 
         # Build connection string
         self.connection = "{}://{}{}:{}".format(
-            protocol,
-            interface + ";" if interface else "",
-            group,
-            port
+            self.protocol,
+            self.interface + ";" if self.interface else "",
+            self.group,
+            self.port
         )
+
+        # Auth object
+        self.auth = Auth(self.cluster_key, self.hostname)
+        self.digest = self.auth.digest()
 
         # Create ZMQ context
         self.context = zmq.Context()
@@ -39,8 +44,6 @@ class PubSub():
 
         # Create and subscribe socket to publishers
         self.sub = self.context.socket(zmq.SUB)
-        for key in self.keys:
-            self.sub.setsockopt(zmq.SUBSCRIBE, key)
 
         # If using ZMQ 2.x, set high watermarks to same default as 3.x+
         if zmq.zmq_version_info()[0] == 2:
@@ -51,22 +54,75 @@ class PubSub():
         self.pub.bind(self.connection)
         self.sub.connect(self.connection)
 
-    def publish(self, key, node, data):
-        # Send message with subscription key
-        self.pub.send_multipart([key, node, json.dumps(data)])
+        # pub/sub queues
+        self.subscribers = Store()
+        self.publisher = Queue.Queue()
 
-    def receive(self, interval):
+        # Create and start daemon worker threads
+        for target in [self.pub_worker, self.sub_worker]:
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+
+    def subscribe(self, key):
+        "Subscribe to key, create and return attached subscriber queue"
+
+        self.sub.setsockopt(zmq.SUBSCRIBE, key)
+        self.subscribers[key] = Queue.Queue()
+        return self.subscribers[key]
+
+    def publish(self, key, node, data):
+        "Publish message through publisher queue"
+
+        self.publisher.put([key, node, data])
+
+    def pub_worker(self):
+        "Worker thread to publish queued messages"
+
+        while True:
+            try:
+                # Wait for message from queue
+                key, node, data = self.publisher.get(timeout=1)
+
+                # And publish it out
+                self.pub.send_multipart(
+                    [
+                        key,
+                        node,
+                        self.digest,
+                        json.dumps(data)
+                    ]
+                )
+            # Queue.get timed out, carry on
+            except Queue.Empty:
+                continue
+
+    def sub_worker(self):
+        "Worker thread to queue subscribed messages we receive"
+
         # Register poller for incoming messages
         poller = zmq.Poller()
         poller.register(self.sub, zmq.POLLIN)
 
         while True:
             # Wait for message
-            sockets = dict(poller.poll(interval * 1000))  # In ms
+            sockets = dict(poller.poll(1000))  # In ms
 
-            # Yield 'em if you've got 'em
+            # Got a message?
             if self.sub in sockets:
-                yield self.sub.recv_multipart()
-            # Timed out, yield None
-            else:
-                yield None
+                # Receive it
+                key, node, digest, data = self.sub.recv_multipart()
+
+                # If we have a subscriber
+                if key in self.subscribers:
+                    # If authenticated, queue it
+                    if self.auth.verify(digest, node):
+                        self.subscribers[key].put([key, node, data])
+                    # Otherwise complain
+                    else:
+                        print(
+                            "[{}] Unauthenticated message: {}".format(
+                                time.ctime(),
+                                [key, node, json.dumps(data, indent=4)]
+                            )
+                        )
