@@ -12,9 +12,6 @@ class PubSub():
     "PUB/SUB interface"
 
     def __init__(self, config):
-        # Call super
-        super(PubSub, self).__init__()
-
         # Store config items
         self.hostname = config["hostname"]
         self.group = config["group"]
