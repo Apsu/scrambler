@@ -2,7 +2,7 @@ import json
 
 
 class Config():
-    def __init__(self, path="/usr/local/etc/scrambler.json"):
+    def __init__(self, path="/usr/local/etc/scrambler/scrambler.json"):
         self.path = path
         self.read()
 
