@@ -9,7 +9,7 @@ from scrambler.store import Store
 
 
 class PubSub():
-    "PUB/SUB interface class"
+    "PUB/SUB interface"
 
     def __init__(self, config):
         # Call super
@@ -65,7 +65,7 @@ class PubSub():
             thread.start()
 
     def subscribe(self, key):
-        "Subscribe to key, create and return attached subscriber queue"
+        "Subscribe to key, create/return attached subscriber queue"
 
         self.sub.setsockopt(zmq.SUBSCRIBE, key)
         self.subscribers[key] = Queue.Queue()
