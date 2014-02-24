@@ -22,8 +22,8 @@
           "haproxy": "lb"
         }
       ],
-      "affinity": True,
-      "strict": False
+      "affinity": true,
+      "strict": false
     }
   },
   "scheduler": "RoundRobin",
