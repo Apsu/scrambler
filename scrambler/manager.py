@@ -12,7 +12,7 @@ from scrambler.pubsub import PubSub
 class Manager():
     "Policy-based Docker container manager"
 
-    def __init__(self):
+    def __init__(self, argv):
         # Config object
         self.config = Config()
 

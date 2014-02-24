@@ -6,7 +6,7 @@ from scrambler.manager import Manager
 # Entry point
 def main(argv=sys.argv[1:]):
     # Start cluster manager
-    Manager(interface=argv[0])
+    Manager(argv)
 
 # If called directly
 if __name__ == "__main__":
