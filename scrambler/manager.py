@@ -36,7 +36,7 @@ class Manager():
             self.scheduler.daemon = True
             self.scheduler.start()
 
-            # While the threads are alive, join with timeout
+            # While the scheduler is alive, join with timeout for non-busy wait
             while self.scheduler.is_alive():
                 self.scheduler.join(1)
         # Handle ^C
