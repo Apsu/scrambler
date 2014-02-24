@@ -24,6 +24,7 @@ class Cluster():
         zombie_interval=15        # How long after update to consider node dead
     ):
         # Store parameters
+        self.fence = fence
         self.hostname = hostname
         self.address = address
         self.interface = interface
