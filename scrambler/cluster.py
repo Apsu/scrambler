@@ -15,12 +15,13 @@ class Cluster():
 
     def __init__(
         self,
-        hostname="localhost",  # Our hostname
-        address="127.0.0.1",   # Our unicast address
-        interface="eth0",     # Physical interface to use
-        announce_interval=1,  # How often to announce ourselves
-        update_interval=5,    # How often to update our cluster state view
-        zombie_interval=15    # How long after update to consider node dead
+        fence=threading.Event(),  # Fence event object
+        hostname="localhost",     # Our hostname
+        address="127.0.0.1",      # Our unicast address
+        interface="eth0",         # Physical interface to use
+        announce_interval=1,      # How often to announce ourselves
+        update_interval=5,        # How often to update our cluster state view
+        zombie_interval=15        # How long after update to consider node dead
     ):
         # Store parameters
         self.hostname = hostname
@@ -39,13 +40,7 @@ class Cluster():
                     }
                 }
             ),
-            "policy": Store(
-                {
-                    self.hostname: {
-                        "policies": []
-                    }
-                }
-            )
+            "policy": Store()
         }
 
         # Message queue
@@ -77,6 +72,11 @@ class Cluster():
             lambda key, node, data: self.stores[key].update({node: data})
         )
 
+        self.router.add_hook(
+            "policy",
+            lambda key, node, data: self.stores[key].update(data)
+        )
+
         # ZMQ PUB/SUB helper
         self.pubsub = PubSub(
             keys=self.stores.keys(),
@@ -84,45 +84,12 @@ class Cluster():
             interface=self.interface
         )
 
-        # Thread fence
-        self.fence = threading.Event()
-
         # Thread pool
         self.threads = []
 
         # Add threads to pool
         for target in [self.announce, self.listen, self.handle, self.update]:
             self.threads.append(threading.Thread(target=target))
-
-        # Start threads
-        for thread in self.threads:
-            thread.start()
-
-        # Catch anything that bubbles up
-        try:
-            # While the threads are alive, join with timeout
-            while any(map(lambda x: x.is_alive(), self.threads)):
-                map(lambda x: x.join(1), self.threads)
-        # Handle ^C
-        except KeyboardInterrupt:
-            print("Exiting on SIGINT.")
-        # Anything else
-        except Exception as e:
-            print("Exiting due to: {}.".format(e))
-        # Always do the needful
-        finally:
-            self.exit()
-
-    def exit(self):
-        "Signal threads to exit and wait on them"
-
-        print("Waiting on threads...")
-
-        # Signal fence so threads exit
-        self.fence.set()
-
-        # Wait on them
-        map(lambda x: x.join(), self.threads)
 
     def publish(self, key, data):
         "Publish key:data from us"
@@ -150,14 +117,7 @@ class Cluster():
                             > self.zombie_interval
                         )
                     ):
-                        print(
-                            "[{}] Pruning zombie: {}".format(
-                                time.ctime(),
-                                node
-                            )
-                        )
                         del self.stores["cluster"][node]
-                        continue
 
                 # Show cluster status
                 print(
