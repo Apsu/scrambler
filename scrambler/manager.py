@@ -13,29 +13,29 @@ class Manager():
     "Policy-based Docker container manager"
 
     def __init__(self, argv):
-        # Config object
-        self.config = Config()
-
-        # Docker client object
-        self.docker = Docker()
-
-        # Get hostname and address
-        self.config["hostname"] = platform.node()
-        self.config["address"] = socket.gethostbyname(socket.getfqdn())
-
-        # ZMQ PUB/SUB helper
-        self.pubsub = PubSub(self.config)
-
-        # Initialize cluster
-        self.cluster = Cluster(self.config, self.pubsub)
-
-        # Start scheduler thread
-        self.scheduler = threading.Thread(target=self.schedule)
-        self.scheduler.daemon = True
-        self.scheduler.start()
-
         # Catch anything that bubbles up
         try:
+            # Config object
+            self.config = Config()
+
+            # Docker client object
+            self.docker = Docker()
+
+            # Get hostname and address
+            self.config["hostname"] = platform.node()
+            self.config["address"] = socket.gethostbyname(socket.getfqdn())
+
+            # ZMQ PUB/SUB helper
+            self.pubsub = PubSub(self.config)
+
+            # Initialize cluster
+            self.cluster = Cluster(self.config, self.pubsub)
+
+            # Start scheduler thread
+            self.scheduler = threading.Thread(target=self.schedule)
+            self.scheduler.daemon = True
+            self.scheduler.start()
+
             # While the threads are alive, join with timeout
             while self.scheduler.is_alive():
                 self.scheduler.join(1)
