@@ -1,3 +1,5 @@
+from __future__ import absolute_import  # When can 3.x be now?
+
 import docker
 
 
