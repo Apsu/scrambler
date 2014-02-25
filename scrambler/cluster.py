@@ -4,6 +4,7 @@ import json
 import Queue
 import threading
 import time
+import traceback
 
 from scrambler.store import Store
 
@@ -76,8 +77,9 @@ class Cluster():
                     )
                 )
             # Print anything else and continue
-            except Exception as e:
-                print("Exception in update(): {}".format(e))
+            except Exception:
+                print("Exception in update()")
+                print(traceback.format_exc())
             finally:
                 # Wait interval before next check
                 time.sleep(self.update_interval)
@@ -109,8 +111,9 @@ class Cluster():
                 # TODO: Do something useful here?
                 continue
             # Print anything else and continue
-            except Exception as e:
-                print("Exception in listen(): {}".format(e))
+            except Exception:
+                print("Exception in listen():")
+                print(traceback.format_exc())
             finally:
                 # Tell the queue we're done
                 self.queue.task_done()
@@ -123,8 +126,9 @@ class Cluster():
                 # Publish announcement with our state
                 self.pubsub.publish("cluster", self.state[self.hostname])
             # Print anything else and continue
-            except Exception as e:
-                print("Exception in announce(): {}".format(e))
+            except Exception:
+                print("Exception in announce():")
+                print(traceback.format_exc())
             finally:
                 # Wait the interval
                 time.sleep(self.announce_interval)

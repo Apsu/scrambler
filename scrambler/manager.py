@@ -2,6 +2,7 @@ import platform
 import socket
 import threading
 import time
+import traceback
 
 from scrambler.cluster import Cluster
 from scrambler.config import Config
@@ -43,8 +44,9 @@ class Manager():
         except KeyboardInterrupt:
             print("Exiting on SIGINT.")
         # Anything else
-        except Exception as e:
-            print("Exiting due to: {}.".format(e))
+        except Exception:
+            print("Exiting due to exception:")
+            print(traceback.format_exc())
 
     def schedule(self):
         "Policy scheduler"
@@ -55,8 +57,9 @@ class Manager():
             try:
                 continue
             # Print anything else and continue
-            except Exception as e:
-                print("Exception in schedule(): {}".format(e))
+            except Exception:
+                print("Exception in schedule():")
+                print(traceback.format_exc())
             finally:
                 # Wait the interval
                 time.sleep(self.schedule_interval)
