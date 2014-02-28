@@ -32,14 +32,15 @@ class Manager():
             # Initialize cluster
             self.cluster = Cluster(self.config, self.pubsub)
 
-            # Start scheduler thread
-            self.scheduler = threading.Thread(target=self.schedule)
-            self.scheduler.daemon = True
-            self.scheduler.start()
+            # Start scheduler daemon thread
+            with threading.Thread(target=self.schedule) as thread:
+                thread.daemon = True
+                thread.start()
 
-            # While the scheduler is alive, join with timeout for non-busy wait
-            while self.scheduler.is_alive():
-                self.scheduler.join(1)
+                # While thread is alive, non-busy wait
+                while thread.is_alive():
+                    thread.join(1)
+
         # Handle ^C
         except KeyboardInterrupt:
             print("Exiting on SIGINT.")
