@@ -20,7 +20,8 @@ class Manager():
             self.config = Config()
 
             # Docker client object
-            self.docker = Docker()
+            #TODO: Start these threads when this is done
+            #self.docker = Docker()
 
             # Get hostname and address
             self.config["hostname"] = platform.node()
