@@ -29,7 +29,7 @@ class Config():
     def __getitem__(self, key):
         "Get a copy of the requested key's value or None if not found"
 
-        return self.config[key].copy() if key in self.config else None
+        return self.config[key] if key in self.config else None
 
     @synchronized("write")
     def __setitem__(self, key, value):
