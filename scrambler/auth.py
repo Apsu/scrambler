@@ -20,4 +20,4 @@ class Auth():
     def verify(self, digest, data):
         "Verify specified digest matches data with our key"
 
-        return hmac.new(self.key, data) == digest
+        return (hmac.new(self.key, data) == digest)
