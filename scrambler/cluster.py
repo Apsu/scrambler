@@ -17,12 +17,12 @@ class Cluster():
         super(self, Cluster).__init__()
 
         # Initialize from config
-        self.hostname = config["hostname"]
-        self.address = config["address"]
-        self.interface = config["interface"]
-        self.announce_interval = config["announce_interval"]
-        self.update_interval = config["update_interval"]
-        self.zombie_interval = config["zombie_interval"]
+        self.hostname = config["connection"]["hostname"]
+        self.address = config["connection"]["address"]
+        self.interface = config["connection"]["interface"]
+        self.announce_interval = config["interval"]["announce_interval"]
+        self.update_interval = config["interval"]["update_interval"]
+        self.zombie_interval = config["interval"]["zombie_interval"]
 
         # Store pubsub object
         self.pubsub = pubsub

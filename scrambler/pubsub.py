@@ -13,12 +13,12 @@ class PubSub():
 
     def __init__(self, config):
         # Store config items
-        self.hostname = config["hostname"]
-        self.group = config["group"]
-        self.port = config["port"]
-        self.interface = config["interface"]
-        self.protocol = config["protocol"]
-        self.cluster_key = config["cluster_key"]
+        self.hostname = config["connection"]["hostname"]
+        self.group = config["connection"]["group"]
+        self.port = config["connection"]["port"]
+        self.interface = config["connection"]["interface"]
+        self.protocol = config["connection"]["protocol"]
+        self.cluster_key = config["auth"]["cluster_key"]
 
         # Build connection string
         self.connection = "{}://{}{}:{}".format(

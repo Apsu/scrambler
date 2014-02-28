@@ -1,31 +1,33 @@
 {
-  "connection": {
-    "interface": "eth2",
-    "address": "224.0.0.127",
-    "port": "4999",
-    "protocol": "epgm"
-  },
-  "interval": {
-    "announce": 1,
-    "schedule": 1,
-    "update": 5,
-    "zombie": 15
-  },
-  "policy": {
-    "admin:latest": {
-      "min": 1,
-      "max": 1,
-      "links": [
-        {
-          "mysql": "db",
-          "rabbitmq": "mbus",
-          "haproxy": "lb"
+    "connection": {
+        "interface": "eth2",
+        "address": "224.0.0.127",
+        "port": "4999",
+        "protocol": "epgm"
+    },
+    "interval": {
+        "announce": 1,
+        "schedule": 1,
+        "update": 5,
+        "zombie": 15
+    },
+    "policy": {
+        "admin:latest": {
+            "min": 1,
+            "max": 1,
+            "links": [
+                {
+                    "mysql": "db",
+                    "rabbitmq": "mbus",
+                    "haproxy": "lb"
+                }
+            ],
+            "affinity": true,
+            "strict": false
         }
-      ],
-      "affinity": true,
-      "strict": false
+    },
+    "scheduler": "RoundRobin",
+    "auth": {
+        "cluster_key": "35lkjsd98f79235lkjsdf098235"
     }
-  },
-  "scheduler": "RoundRobin",
-  "cluster_key": "35lkjsd98f79235lkjsdf098235"
 }
