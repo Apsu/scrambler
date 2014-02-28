@@ -10,7 +10,7 @@ class Auth():
         self.data = data
 
         # Compute this node's digest
-        self.digest = hmac.new(self.key, self.data).hexdigest()
+        self.digest = hmac.new(str(self.key), str(self.data)).hexdigest()
 
     def digest(self):
         "Get our digest"
@@ -20,4 +20,4 @@ class Auth():
     def verify(self, digest, data):
         "Verify specified digest matches data with our key"
 
-        return (hmac.new(self.key, data) == digest)
+        return hmac.new(str(self.key), str(data)).hexdigest() == digest
