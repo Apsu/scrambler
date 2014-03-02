@@ -17,8 +17,8 @@ class Cluster():
         super(self, Cluster).__init__()
 
         # Initialize from config
-        self.hostname = config["connection"]["hostname"]
-        self.address = config["connection"]["address"]
+        self.hostname = config["host"]["hostname"]
+        self.address = config["host"]["address"]
         self.interface = config["connection"]["interface"]
         self.announce_interval = config["interval"]["announce_interval"]
         self.update_interval = config["interval"]["update_interval"]

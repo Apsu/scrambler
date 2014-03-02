@@ -13,7 +13,7 @@ class PubSub():
 
     def __init__(self, config):
         # Store config items
-        self.hostname = config["connection"]["hostname"]
+        self.hostname = config["host"]["hostname"]
         self.group = config["connection"]["group"]
         self.port = config["connection"]["port"]
         self.interface = config["connection"]["interface"]

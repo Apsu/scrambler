@@ -24,8 +24,8 @@ class Manager():
             #self.docker = Docker()
 
             # Get hostname and address
-            self.config["connection"]["hostname"] = platform.node()
-            self.config["connection"]["address"] = socket.gethostbyname(socket.getfqdn())
+            self.config["host"]["hostname"] = platform.node()
+            self.config["host"]["address"] = socket.gethostbyname(socket.getfqdn())
 
             # ZMQ PUB/SUB helper
             self.pubsub = PubSub(self.config)
