@@ -112,7 +112,7 @@ class Cluster():
                 # Tell the queue we're done
                 self.queue.task_done()
 
-    def announce(self, fence):
+    def announce(self):
         "Thread for announcing our state to the cluster"
 
         while True:

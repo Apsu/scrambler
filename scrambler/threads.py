@@ -19,5 +19,5 @@ class Threads():
         # If asked to join
         if join:
             # While any threads are alive, rotate joins through them
-            while any(lambda t: t.is_alive(), self._threads):
+            while any(map(lambda t: t.is_alive(), self._threads)):
                 map(lambda t: t.join(1), self._threads)
