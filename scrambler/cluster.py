@@ -13,9 +13,6 @@ class Cluster():
     "Manage cluster discovery"
 
     def __init__(self, config, pubsub):
-        # Initialize our super
-        super(self, Cluster).__init__()
-
         # Initialize from config
         self.hostname = config["host"]["hostname"]
         self.address = config["host"]["address"]
