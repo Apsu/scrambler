@@ -68,10 +68,10 @@ class PubSub():
         self.subscribers[key] = Queue.Queue()
         return self.subscribers[key]
 
-    def publish(self, key, node, data):
+    def publish(self, key, data):
         "Publish message through publisher queue"
 
-        self.publisher.put([key, node, data])
+        self.publisher.put([key, self.hostname, data])
 
     def pub_worker(self):
         "Worker thread to publish queued messages"
