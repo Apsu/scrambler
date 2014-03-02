@@ -108,7 +108,7 @@ class Cluster():
             except Exception:
                 print("Exception in listen():")
                 print(traceback.format_exc())
-            finally:
+            else:
                 # Tell the queue we're done
                 self.queue.task_done()
 

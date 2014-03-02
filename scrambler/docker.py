@@ -90,3 +90,5 @@ class Docker():
             except Exception:
                 print("Exception in schedule():")
                 print(traceback.format_exc())
+            else:
+                self.queue.task_done()

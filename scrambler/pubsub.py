@@ -93,6 +93,8 @@ class PubSub():
             # Queue.get timed out, carry on
             except Queue.Empty:
                 continue
+            else:
+                self.publisher.task_done()
 
     def sub_worker(self):
         "Worker thread to queue subscribed messages we receive"
