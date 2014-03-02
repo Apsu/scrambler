@@ -1,6 +1,6 @@
 {
     "host": {
-    }
+    },
     "connection": {
         "interface": "eth2",
         "group": "224.0.0.127",
@@ -26,7 +26,7 @@
             ],
             "affinity": true,
             "strict": false,
-            "config": {},
+            "config": {}
         }
     },
     "scheduler": "RoundRobin",
