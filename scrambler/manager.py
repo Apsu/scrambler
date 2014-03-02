@@ -19,6 +19,9 @@ class Manager():
             # Config object
             self.config = Config()
 
+            # Store interval
+            self.schedule_interval = self.config["interval"]["schedule"]
+
             # Docker client object
             #TODO: Start these threads when this is done
             #self.docker = Docker()
