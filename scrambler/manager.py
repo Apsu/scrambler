@@ -1,6 +1,5 @@
 import platform
 import socket
-import threading
 import time
 import traceback
 
@@ -8,6 +7,7 @@ from scrambler.cluster import Cluster
 from scrambler.config import Config
 from scrambler.docker import Docker
 from scrambler.pubsub import PubSub
+from scrambler.threads import Threads
 
 
 class Manager():
@@ -33,14 +33,8 @@ class Manager():
             # Initialize cluster
             self.cluster = Cluster(self.config, self.pubsub)
 
-            # Start scheduler daemon thread
-            with threading.Thread(target=self.schedule) as thread:
-                thread.daemon = True
-                thread.start()
-
-                # While thread is alive, non-busy wait
-                while thread.is_alive():
-                    thread.join(1)
+            # Start scheduler daemon thread and wait on it
+            Threads([self.schedule], join=True)
 
         # Handle ^C
         except KeyboardInterrupt:

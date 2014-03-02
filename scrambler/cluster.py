@@ -2,11 +2,11 @@ from __future__ import print_function
 
 import json
 import Queue
-import threading
 import time
 import traceback
 
 from scrambler.store import Store
+from scrambler.threads import Threads
 
 
 class Cluster():
@@ -39,10 +39,7 @@ class Cluster():
         self.queue = self.pubsub.subscribe("cluster")
 
         # Start daemon worker threads
-        for target in [self.announce, self.listen, self.handle, self.update]:
-            thread = threading.Thread(target=target)
-            thread.daemon = True
-            thread.start()
+        Threads([self.announce, self.listen, self.update])
 
     def update(self):
         "Thread for periodically updating cluster state dict"
