@@ -2,10 +2,11 @@ from __future__ import absolute_import  # When can 3.x be now?
 
 import docker
 import Queue
-import threading
+import time
 import traceback
 
 from scrambler.store import Store
+from scrambler.threads import Threads
 
 
 class Docker():
@@ -25,11 +26,8 @@ class Docker():
         # Docker state object
         self.state = Store()
 
-        # Create and start message daemon thread
-        for target in [self.events, self.handler]:
-            target = threading.Thread(target=self.handler)
-            target.daemon = True
-            target.start()
+        # Start event generator and queue handler threads
+        Threads([self.events, self.handler])
 
     def containers_by_image(self):
         "Return containers indexed by image name, with count"
@@ -67,7 +65,11 @@ class Docker():
         while True:
             try:
                 for event in self.client.events():
-                    self.queue.put("event", self.config["hostname"], event)
+                    self.queue.put(
+                        "event",
+                        self.config["host"]["hostname"],
+                        event
+                    )
             except:
                 continue
 
@@ -77,6 +79,13 @@ class Docker():
         while True:
             try:
                 key, node, data = self.queue.get(timeout=1)
+
+                print(
+                    "[{}] Docker message: {}".format(
+                        time.ctime(),
+                        (key, node, data)
+                    )
+                )
 
                 # If message is state transfer from other nodes
                 if key == "docker":

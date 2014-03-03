@@ -23,12 +23,13 @@ class Manager():
             self.schedule_interval = self.config["interval"]["schedule"]
 
             # Docker client object
-            #TODO: Start these threads when this is done
-            #self.docker = Docker()
+            self.docker = Docker()
 
             # Get hostname and address
             self.config["host"]["hostname"] = platform.node()
-            self.config["host"]["address"] = socket.gethostbyname(socket.getfqdn())
+            self.config["host"]["address"] = socket.gethostbyname(
+                socket.getfqdn()
+            )
 
             # ZMQ PUB/SUB helper
             self.pubsub = PubSub(self.config)
@@ -54,7 +55,8 @@ class Manager():
 
         while True:
             try:
-                continue
+                containers = self.docker.containers_by_image()
+                self.pubsub.publish("docker", containers)
             # Print anything else and continue
             except Exception:
                 print("Exception in schedule():")
