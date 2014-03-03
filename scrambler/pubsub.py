@@ -48,7 +48,7 @@ class PubSub():
             self.sub.setsockopt(zmq.HWM, 1000)
 
         # ...and in the darkness bind them
-        self.pub.bind(self.connection)
+        self.pub.connect(self.connection)
         self.sub.connect(self.connection)
 
         # pub/sub queues

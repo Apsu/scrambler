@@ -18,6 +18,10 @@ class Store():
         return self._store[key]
 
     @synchronized("read")
+    def __contains__(self, key):
+        return key in self._store
+
+    @synchronized("read")
     def get(self, key, default=None):
         return self._store[key] if key in self._store else default
 
