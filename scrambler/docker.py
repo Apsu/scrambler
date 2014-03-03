@@ -67,9 +67,11 @@ class Docker():
             try:
                 for event in self.client.events():
                     self.queue.put(
-                        "event",
-                        self.config["host"]["hostname"],
-                        json.dumps(event)
+                        [
+                            "event",
+                            self.config["host"]["hostname"],
+                            json.dumps(event)
+                        ]
                     )
             except:
                 print("Exception in docker.events():")
