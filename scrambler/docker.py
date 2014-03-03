@@ -1,6 +1,7 @@
 from __future__ import absolute_import  # When can 3.x be now?
 
 import docker
+import json
 import Queue
 import time
 import traceback
@@ -68,7 +69,7 @@ class Docker():
                     self.queue.put(
                         "event",
                         self.config["host"]["hostname"],
-                        event
+                        json.dumps(event)
                     )
             except:
                 continue
