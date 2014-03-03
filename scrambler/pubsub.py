@@ -2,6 +2,7 @@ import json
 import threading
 import Queue
 import time
+import traceback
 import zmq
 
 from scrambler.auth import Auth
@@ -93,6 +94,9 @@ class PubSub():
             # Queue.get timed out, carry on
             except Queue.Empty:
                 continue
+            except:
+                print("Exception in pubsub.pub_worker():")
+                print(traceback.format_exc())
             else:
                 self.publisher.task_done()
 
@@ -104,27 +108,31 @@ class PubSub():
         poller.register(self.sub, zmq.POLLIN)
 
         while True:
-            # Wait for message
-            sockets = dict(poller.poll(1000))  # In ms
+            try:
+                # Wait for message
+                sockets = dict(poller.poll(1000))  # In ms
 
-            # Got a message?
-            if self.sub in sockets:
-                # Receive it
-                key, node, digest, data = self.sub.recv_multipart()
+                # Got a message?
+                if self.sub in sockets:
+                    # Receive it
+                    key, node, digest, data = self.sub.recv_multipart()
 
-                # Convert to object
-                data = json.loads(data)
+                    # Convert to object
+                    data = json.loads(data)
 
-                # If we have a subscriber
-                if key in self.subscribers:
-                    # If authenticated, queue it
-                    if self.auth.verify(digest, node):
-                        self.subscribers[key].put([key, node, data])
-                    # Otherwise complain
-                    else:
-                        print(
-                            "[{}] Unauthenticated message: {}".format(
-                                time.ctime(),
-                                [key, node, json.dumps(data, indent=4)]
+                    # If we have a subscriber
+                    if key in self.subscribers:
+                        # If authenticated, queue it
+                        if self.auth.verify(digest, node):
+                            self.subscribers[key].put([key, node, data])
+                        # Otherwise complain
+                        else:
+                            print(
+                                "[{}] Unauthenticated message: {}".format(
+                                    time.ctime(),
+                                    [key, node, json.dumps(data, indent=4)]
+                                )
                             )
-                        )
+            except:
+                print("Exception in pubsub.sub_worker():")
+                print(traceback.format_exc())

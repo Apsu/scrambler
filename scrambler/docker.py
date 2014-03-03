@@ -72,7 +72,8 @@ class Docker():
                         json.dumps(event)
                     )
             except:
-                continue
+                print("Exception in docker.events():")
+                print(traceback.format_exc())
 
     def handler(self):
         "Handle docker state messages and events"
@@ -97,8 +98,8 @@ class Docker():
             except Queue.Empty:
                 continue
             # Print anything else and continue
-            except Exception:
-                print("Exception in schedule():")
+            except:
+                print("Exception in docker.handler():")
                 print(traceback.format_exc())
             else:
                 self.queue.task_done()

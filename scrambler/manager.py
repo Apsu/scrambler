@@ -58,8 +58,8 @@ class Manager():
                 containers = self.docker.containers_by_image()
                 self.pubsub.publish("docker", containers)
             # Print anything else and continue
-            except Exception:
-                print("Exception in schedule():")
+            except:
+                print("Exception in manager.schedule():")
                 print(traceback.format_exc())
             finally:
                 # Wait the interval

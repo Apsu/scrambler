@@ -71,8 +71,8 @@ class Cluster():
                     )
                 )
             # Print anything else and continue
-            except Exception:
-                print("Exception in update()")
+            except:
+                print("Exception in cluster.update()")
                 print(traceback.format_exc())
             finally:
                 # Wait interval before next check
@@ -105,8 +105,8 @@ class Cluster():
                 # TODO: Do something useful here?
                 continue
             # Print anything else and continue
-            except Exception:
-                print("Exception in listen():")
+            except:
+                print("Exception in cluster.listen():")
                 print(traceback.format_exc())
             else:
                 # Tell the queue we're done
@@ -120,8 +120,8 @@ class Cluster():
                 # Publish announcement with our state
                 self.pubsub.publish("cluster", self.state[self.hostname])
             # Print anything else and continue
-            except Exception:
-                print("Exception in announce():")
+            except:
+                print("Exception in cluster.announce():")
                 print(traceback.format_exc())
             finally:
                 # Wait the interval
