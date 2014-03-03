@@ -112,6 +112,9 @@ class PubSub():
                 # Receive it
                 key, node, digest, data = self.sub.recv_multipart()
 
+                # Convert to object
+                data = json.loads(data)
+
                 # If we have a subscriber
                 if key in self.subscribers:
                     # If authenticated, queue it
