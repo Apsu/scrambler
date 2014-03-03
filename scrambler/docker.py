@@ -83,6 +83,7 @@ class Docker():
         while True:
             try:
                 key, node, data = self.queue.get(timeout=1)
+                data = json.loads(data)
 
                 print(
                     "[{}] Docker message: {}".format(
