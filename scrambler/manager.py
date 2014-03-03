@@ -19,12 +19,6 @@ class Manager():
             # Config object
             self.config = Config()
 
-            # Store interval
-            self.schedule_interval = self.config["interval"]["schedule"]
-
-            # Docker client object
-            self.docker = Docker()
-
             # Get hostname and address
             self.config["host"]["hostname"] = platform.node()
             self.config["host"]["address"] = socket.gethostbyname(
@@ -33,6 +27,12 @@ class Manager():
 
             # ZMQ PUB/SUB helper
             self.pubsub = PubSub(self.config)
+
+            # Store interval
+            self.schedule_interval = self.config["interval"]["schedule"]
+
+            # Docker client object
+            self.docker = Docker(self.config, self.pubsub)
 
             # Initialize cluster
             self.cluster = Cluster(self.config, self.pubsub)
