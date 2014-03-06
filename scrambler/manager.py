@@ -1,3 +1,4 @@
+import json
 import platform
 import socket
 import time
@@ -20,8 +21,9 @@ class Manager():
             # Config object
             self._config = Config()
 
-            # Store interval
+            # Store intervals
             self._schedule_interval = self._config["interval"]["schedule"]
+            self._update_interval = self._config["interval"]["update"]
 
             if "hostname" not in self._config:
                 # Get hostname
@@ -36,13 +38,18 @@ class Manager():
             # ZMQ PUB/SUB helper
             self._pubsub = PubSub(self._config)
 
-            # Initialize docker client
+            # Initialize docker client and get state
             self._docker = Docker(self._config, self._pubsub)
+            self._docker_state = self._docker.get_state()
 
-            # Initialize cluster
+            # Initialize cluster and get state
             self._cluster = Cluster(self._config, self._pubsub)
+            self._cluster_state = self._cluster.get_state()
 
-            # Start scheduler daemon thread and wait on it
+            # Start update thread
+            Threads([self.update])
+
+            # Start scheduler thread and wait on it
             Threads([self.schedule], join=True)
 
         # Handle ^C
@@ -52,6 +59,48 @@ class Manager():
         except Exception:
             print("Exiting due to exception:")
             print(traceback.format_exc())
+
+    def update(self):
+        """Update states."""
+
+        while True:
+            try:
+                # Check for zombies and headshot them
+                for node, state in self._cluster_state:
+                    if (
+                        node != self._hostname  # We're never a zombie, honest
+                        and (
+                            time.time()
+                            - state["timestamp"]
+                            > self._zombie_interval
+                        )
+                    ):
+                        # STONITH!!
+                        del self._cluster_state[node]
+                        del self._docker_state[node]
+
+                # Show cluster state
+                print(
+                    "[{}] Cluster State: {}".format(
+                        time.ctime(),
+                        json.dumps(dict(self._state), indent=4)
+                    )
+                )
+
+                # Show docker state
+                print(
+                    "[{}] Docker State: {}".format(
+                        time.ctime(),
+                        json.dumps(dict(self._state), indent=4)
+                    )
+                )
+            # Print anything else
+            except:
+                print("Exception in cluster.update()")
+                print(traceback.format_exc())
+            # Always wait the interval
+            finally:
+                time.sleep(self._update_interval)
 
     def schedule(self):
         """Schedule docker events based on policy."""
@@ -72,6 +121,6 @@ class Manager():
             except:
                 print("Exception in manager.schedule():")
                 print(traceback.format_exc())
+            # Always wait the interval
             finally:
-                # Wait the interval
                 time.sleep(self._schedule_interval)

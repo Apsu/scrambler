@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import json
 import Queue
 import time
 import traceback
@@ -17,7 +16,6 @@ class Cluster():
         self._hostname = config["hostname"]
         self._address = config["address"]
         self._announce_interval = config["interval"]["announce"]
-        self._update_interval = config["interval"]["update"]
         self._zombie_interval = config["interval"]["zombie"]
 
         # Store pubsub object
@@ -38,7 +36,10 @@ class Cluster():
         self._queue = self._pubsub.subscribe("cluster")
 
         # Start daemon worker threads
-        Threads([self.announce, self.listen, self.update])
+        Threads([self.announce, self.listen])
+
+    def get_state(self):
+        return self._state
 
     def is_master(self):
         """Return true if there's only one master and we're it."""
@@ -50,43 +51,6 @@ class Cluster():
         ]
 
         return len(masters) == 1 and masters[0] == self._hostname
-
-    def update(self):
-        """Update cluster state."""
-
-        while True:
-            try:
-                # Check for zombies and headshot them
-                for node, state in self._state:
-                    if (
-                        node != self._hostname  # We're never a zombie, honest
-                        and (
-                            time.time()
-                            - state["timestamp"]
-                            > self._zombie_interval
-                        )
-                    ):
-                        # STONITH!!
-                        del self._state[node]
-
-                # Show cluster status
-                print(
-                    "[{}] Cluster State: {}".format(
-                        time.ctime(),
-                        json.dumps(
-                            # Coerce for serializing
-                            dict(self._state),
-                            indent=4
-                        )
-                    )
-                )
-            # Print anything else and continue
-            except:
-                print("Exception in cluster.update()")
-                print(traceback.format_exc())
-            finally:
-                # Wait interval before next check
-                time.sleep(self._update_interval)
 
     def listen(self):
         """Handle cluster state messages."""
