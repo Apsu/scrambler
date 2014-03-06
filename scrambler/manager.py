@@ -35,6 +35,9 @@ class Manager():
                     socket.getfqdn()
                 )
 
+            # Store hostname
+            self._hostname = self._config["hostname"]
+
             # ZMQ PUB/SUB helper
             self._pubsub = PubSub(self._config)
 
