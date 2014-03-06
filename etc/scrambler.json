@@ -1,6 +1,4 @@
 {
-    "host": {
-    },
     "connection": {
         "interface": "eth2",
         "group": "224.0.0.127",
@@ -14,7 +12,8 @@
         "zombie": 15
     },
     "policy": {
-        "admin:latest": {
+        "registry.docker:5000/admin:latest": {
+            "name": "admin",
             "min": 1,
             "max": -1,
             "links": [
@@ -26,7 +25,13 @@
             ],
             "affinity": true,
             "strict": false,
-            "config": {}
+            "config": {
+                "ports": [
+                    {
+                        2222:22
+                    }
+                ]
+            }
         }
     },
     "scheduler": "RoundRobin",
