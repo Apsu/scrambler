@@ -39,7 +39,7 @@ class Docker():
         """Inspect and filter container by UUID."""
 
         # Get all container details
-        container = self._client.inspect(uuid)
+        container = self._client.inspect_container(uuid)
 
         # Return dictionary of just what we want
         return {

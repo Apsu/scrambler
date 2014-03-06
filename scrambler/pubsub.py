@@ -14,7 +14,7 @@ class PubSub():
 
     def __init__(self, config):
         # Store config items
-        self._hostname = config["host"]["hostname"]
+        self._hostname = config["hostname"]
         self._group = config["connection"]["group"]
         self._port = config["connection"]["port"]
         self._interface = config["connection"]["interface"]

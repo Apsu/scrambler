@@ -27,7 +27,7 @@ class Manager():
                 # Get hostname
                 self._config["hostname"] = platform.node()
 
-            if "hostname" not in self._config:
+            if "address" not in self._config:
                 # Get address
                 self._config["address"] = socket.gethostbyname(
                     socket.getfqdn()
@@ -65,8 +65,8 @@ class Manager():
                 if self._cluster.is_master():
                     scheduler.schedule(
                         self._config["policy"],
-                        self._cluster.state,
-                        self._docker.state
+                        self._cluster._state,
+                        self._docker._state
                     )
             # Print anything else and continue
             except:
