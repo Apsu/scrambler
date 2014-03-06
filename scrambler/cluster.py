@@ -38,6 +38,8 @@ class Cluster():
         Threads([self.announce, self.listen])
 
     def get_state(self):
+        """Just return state object."""
+
         return self._state
 
     def is_master(self):

@@ -36,6 +36,8 @@ class Docker():
         Threads([self.events, self.handler, self.announce])
 
     def get_state(self):
+        """Just return state object."""
+
         return self._state
 
     def inspect_container(self, uuid):
