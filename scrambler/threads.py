@@ -2,7 +2,7 @@ import threading
 
 
 class Threads():
-    "Thread pool helper"
+    """Provide thread pool helper."""
 
     def __init__(self, funcs, join=False):
         # Initialize thread pool

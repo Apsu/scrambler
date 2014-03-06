@@ -2,7 +2,7 @@ from scrambler.rwlock import RWLock
 
 
 def synchronized(access):
-    "Thread-safe locking method decorator"
+    """Provide thread-safe locking method decorator."""
 
     def decorator(method):
         def synced(self, *args, **kwargs):

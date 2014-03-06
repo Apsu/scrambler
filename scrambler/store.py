@@ -2,7 +2,7 @@ from scrambler.synchronized import synchronized
 
 
 class Store():
-    "Thread-safe data store"
+    """Provide thread-safe storage object."""
 
     def __init__(self, initialize={}):
         # Initialize state

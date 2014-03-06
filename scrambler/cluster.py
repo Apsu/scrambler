@@ -10,54 +10,64 @@ from scrambler.threads import Threads
 
 
 class Cluster():
-    "Manage cluster discovery"
+    """Manage cluster discovery."""
 
     def __init__(self, config, pubsub):
         # Initialize from config
-        self.hostname = config["host"]["hostname"]
-        self.address = config["host"]["address"]
-        self.interface = config["connection"]["interface"]
-        self.announce_interval = config["interval"]["announce"]
-        self.update_interval = config["interval"]["update"]
-        self.zombie_interval = config["interval"]["zombie"]
+        self._hostname = config["hostname"]
+        self._address = config["address"]
+        self._announce_interval = config["interval"]["announce"]
+        self._update_interval = config["interval"]["update"]
+        self._zombie_interval = config["interval"]["zombie"]
 
         # Store pubsub object
-        self.pubsub = pubsub
+        self._pubsub = pubsub
 
         # Cluster state
-        self.state = Store(
+        self._state = Store(
             {
-                self.hostname: {
+                self._hostname: {
                     "timestamp": time.time(),
-                    "address": self.address,
+                    "address": self._address,
                     "master": False
                 }
             }
         )
 
         # Cluster message subscription queue
-        self.queue = self.pubsub.subscribe("cluster")
+        self._queue = self._pubsub.subscribe("cluster")
 
         # Start daemon worker threads
         Threads([self.announce, self.listen, self.update])
 
+    def is_master(self):
+        """Return true if there's only one master and we're it."""
+
+        masters = [
+            key
+            for key in self._state.keys()
+            if self._state[key]["master"]
+        ]
+
+        return len(masters) == 1 and masters[0] == self._hostname
+
     def update(self):
-        "Thread for periodically updating cluster state dict"
+        """Update cluster state."""
 
         while True:
             try:
                 # Check for zombies and headshot them
-                for node, state in self.state:
+                for node, state in self._state:
                     if (
-                        node != self.hostname  # We're never a zombie, honest
+                        node != self._hostname  # We're never a zombie, honest
                         and (
                             time.time()
                             - state["timestamp"]
-                            > self.zombie_interval
+                            > self._zombie_interval
                         )
                     ):
                         # STONITH!!
-                        del self.state[node]
+                        del self._state[node]
 
                 # Show cluster status
                 print(
@@ -65,7 +75,7 @@ class Cluster():
                         time.ctime(),
                         json.dumps(
                             # Coerce for serializing
-                            dict(self.state),
+                            dict(self._state),
                             indent=4
                         )
                     )
@@ -76,15 +86,18 @@ class Cluster():
                 print(traceback.format_exc())
             finally:
                 # Wait interval before next check
-                time.sleep(self.update_interval)
+                time.sleep(self._update_interval)
 
     def listen(self):
-        "Thread for handling cluster state messages"
+        """Handle cluster state messages."""
 
         while True:
             try:
                 # Wait for cluster messages
-                key, node, data = self.queue.get(timeout=1)
+                key, node, data = self._queue.get(timeout=1)
+
+                # Tell the queue we're done
+                self._queue.task_done()
 
                 # Timestamp message
                 data.update({"timestamp": time.time()})
@@ -93,12 +106,12 @@ class Cluster():
                 data.update(
                     {
                         "master":
-                        min(self.state.keys()) == node
+                        min(self._state.keys()) == node
                     }
                 )
 
                 # Store node:data
-                self.state.update({node: data})
+                self._state.update({node: data})
 
             # Catch empty queue timeout
             except Queue.Empty:
@@ -108,21 +121,18 @@ class Cluster():
             except:
                 print("Exception in cluster.listen():")
                 print(traceback.format_exc())
-            else:
-                # Tell the queue we're done
-                self.queue.task_done()
 
     def announce(self):
-        "Thread for announcing our state to the cluster"
+        """Announce our state to the cluster."""
 
         while True:
             try:
                 # Publish announcement with our state
-                self.pubsub.publish("cluster", self.state[self.hostname])
+                self._pubsub.publish("cluster", self._state[self._hostname])
             # Print anything else and continue
             except:
                 print("Exception in cluster.announce():")
                 print(traceback.format_exc())
             finally:
                 # Wait the interval
-                time.sleep(self.announce_interval)
+                time.sleep(self._announce_interval)

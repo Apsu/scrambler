@@ -2,36 +2,37 @@ import itertools
 
 
 class Scheduler():
-    "Scheduler base class"
+    """Provide scheduler base class."""
 
-    def schedule(self, policies, state):
+    def schedule(self, policies, cluster_state, docker_state):
+        """Provide base schedule function template.
+        policies is an object describing desired cluster state
+        cluster_state is the cluster state object
+        docker_state is the docker state object
+        """
         pass
 
 
-class RoundRobin(Scheduler):
-    "Naive round-robin scheduler"
-
-    def schedule(self, policies, state):
-        """
-        policies is a dict of dicts as follows:
-            # Name of image for container
-            "name": {
-                # Number of containers
-                "count": 3,
-                # Allow node affinity or require node anti-affinity
-                "affinity": True
-                # Run 0 containers if count/affinity isn't met, or not
-                "strict": False
-            }
-
-        state is the cluster state object
-        """
-        # For each policy
+class Distribution(Scheduler):
+    """ Implements naive equal-distribution scheduler.
+    Ignore min/max and run exactly 1 copy of container on every active node
+    """
+    def schedule(self, policies, cluster_state, docker_state):
         for policy in policies:
-            # Get list of targets not
-            targets = [
-                node for node in state
-                if policy not in node["policies"]
-            ]
+            pass
 
-            #mapping = zip(
+
+class RoundRobin(Scheduler):
+    """Implements naive round-robin scheduler."""
+
+    pass
+#    def schedule(self, policies, cluster_state, docker_state):
+#        # For each policy
+#        for policy in policies:
+#            # Get list of targets not
+#            targets = [
+#                node for node in state
+#                if policy not in node["policies"]
+#            ]
+#
+#            #mapping = zip(
