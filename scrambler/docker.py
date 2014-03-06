@@ -1,6 +1,7 @@
 from __future__ import absolute_import  # When can 3.x be now?
 
 import docker
+import json
 import Queue
 import time
 import traceback
@@ -79,6 +80,14 @@ class Docker():
             try:
                 # Publish our container state
                 self._pubsub.publish("docker", self._state[self._hostname])
+
+                # Print docker state
+                print(
+                    "[{}] Docker State: {}".format(
+                        time.ctime(),
+                        json.dumps(dict(self._state), indent=4)
+                    )
+                )
             # Print anything else and continue
             except:
                 print("Exception in docker.announce():")
