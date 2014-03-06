@@ -86,7 +86,7 @@ class Manager():
                 print(
                     "[{}] Cluster State: {}".format(
                         time.ctime(),
-                        json.dumps(dict(self._state), indent=4)
+                        json.dumps(dict(self._cluster_state), indent=4)
                     )
                 )
 
@@ -94,7 +94,7 @@ class Manager():
                 print(
                     "[{}] Docker State: {}".format(
                         time.ctime(),
-                        json.dumps(dict(self._state), indent=4)
+                        json.dumps(dict(self._docker_state), indent=4)
                     )
                 )
             # Print anything else
