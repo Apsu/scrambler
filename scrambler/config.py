@@ -26,6 +26,12 @@ class Config():
             json.dump(self._config, fd)
 
     @synchronized("read")
+    def __contains__(self, key):
+        """Check if object contains key."""
+
+        return key in self._config
+
+    @synchronized("read")
     def __getitem__(self, key):
         """Get a copy of the requested key's value or None if not found."""
 
