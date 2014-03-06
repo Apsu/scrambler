@@ -35,6 +35,9 @@ class Docker():
         # Start daemon worker threads
         Threads([self.events, self.handler, self.announce])
 
+    def get_state(self):
+        return self._state
+
     def inspect_container(self, uuid):
         """Inspect and filter container by UUID."""
 
