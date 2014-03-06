@@ -110,17 +110,17 @@ class Manager():
         """Schedule docker events based on policy."""
 
         #algorithm = self._config["scheduler"]
-        scheduler = Distribution()
+        scheduler = Distribution(
+            self._config["policies"],
+            self._cluster._state,
+            self._docker._state
+        )
 
         while True:
             try:
                 # If we're the only master
                 if self._cluster.is_master():
-                    scheduler.schedule(
-                        self._config["policy"],
-                        self._cluster._state,
-                        self._docker._state
-                    )
+                    scheduler.schedule()
             # Print anything else and continue
             except:
                 print("Exception in manager.schedule():")

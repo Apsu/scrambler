@@ -11,7 +11,7 @@
         "update": 5,
         "zombie": 15
     },
-    "policy": {
+    "policies": {
         "registry.docker:5000/admin:latest": {
             "name": "admin",
             "min": 1,
