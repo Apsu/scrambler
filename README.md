@@ -41,4 +41,4 @@ Modify the config file `etc/scrambler.json` prior to installation, or
 item that will probably need changing is `connection.interface`, to specify the appropriate network
 interface the node will use for the multicast mesh.
 
-Run `scramble $interface` for the interface you want to talk to other scramblers on.
+Run `scramble` to start up the agent.
