@@ -13,7 +13,7 @@ from scrambler.scheduler import Distribution
 
 
 class Manager():
-    """Policy-based Docker container manager."""
+    """Provide policy-based Docker container manager."""
 
     def __init__(self, argv):
         # Catch anything that bubbles up
