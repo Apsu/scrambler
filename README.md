@@ -2,12 +2,13 @@ Scrambler is a decentralized Docker cluster manager, and helps orchestrate clust
 
 The executive summary design goal is to provide a simple agent with minimal dependencies that can:
 
-* Lightweight, agent-based process
+* Run as a lightweight, agent-based process
 * Detect, authenticate and cluster with other agents on other machines
 * Do this automatically, as soon as those machines are plugged into the same network
 * Handle failures, partitioning, or controlled removal of machines from the cluster
 
-Once clustered, the agents will manage their colocated resources based on policy shared between them via the cluster mesh.
+Once clustered, the agents will manage their colocated resources based on their shared policy
+configurations.
 
 Docker
 ---
@@ -34,5 +35,10 @@ To try it out, fire up `./setup.py install`, and you'll get a binary named `scra
 > - python-dev
 > - build-essential
 > - libzmq-dev
+
+Modify the config file `etc/scrambler.json` prior to installation, or
+`/usr/local/etc/scrambler.json` after, in order to set desired node information. The most important
+item that will probably need changing is `connection.interface`, to specify the appropriate network
+interface the node will use for the multicast mesh.
 
 Run `scramble $interface` for the interface you want to talk to other scramblers on.
