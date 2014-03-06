@@ -100,7 +100,7 @@ class Manager():
                 )
             # Print anything else
             except:
-                print("Exception in cluster.update()")
+                print("Exception in manager.update()")
                 print(traceback.format_exc())
             # Always wait the interval
             finally:
