@@ -24,6 +24,7 @@ class Manager():
             # Store intervals
             self._schedule_interval = self._config["interval"]["schedule"]
             self._update_interval = self._config["interval"]["update"]
+            self._zombie_interval = self._config["interval"]["zombie"]
 
             if "hostname" not in self._config:
                 # Get hostname

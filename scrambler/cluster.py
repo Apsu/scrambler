@@ -16,7 +16,6 @@ class Cluster():
         self._hostname = config["hostname"]
         self._address = config["address"]
         self._announce_interval = config["interval"]["announce"]
-        self._zombie_interval = config["interval"]["zombie"]
 
         # Store pubsub object
         self._pubsub = pubsub
