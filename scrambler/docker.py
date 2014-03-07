@@ -207,11 +207,13 @@ class Docker():
                     if data["status"] == "start":
                         # Inspect container and store it
                         state = self.inspect_container(uuid)
-                        self._state[self._hostname][image][uuid] = state
+                        self._state[self._hostname][image][uuid].update(state)
                     # If container has died
                     elif data["status"] == "die":
                         # Delete it from storage
                         del self._state[self._hostname][image][uuid]
+                        if not self._state[self._hostname][image]:
+                            del self._state[self._hostname][image]
             # Continue on queue.get timeout
             except Queue.Empty:
                 continue
