@@ -40,7 +40,7 @@ class Scheduler():
                 "image": image,
                 "name": policy["name"],
                 "config": {
-                    "ports": policy["ports"]
+                    "ports": policy["config"]["ports"]
                 }
             }
         )
