@@ -21,11 +21,7 @@ class Scheduler():
 
         # Initialize if needed
         if node not in self._actions:
-            self._actions[node] = {}
-
-        # Initialize if needed
-        if "actions" not in self._actions[node]:
-            self._actions[node]["actions"] = []
+            self._actions[node] = {"actions": []}
 
     def _run(self, node, image, policy):
         """Add run actions for containers."""
