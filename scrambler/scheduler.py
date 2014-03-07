@@ -118,6 +118,7 @@ class Distribution(Scheduler):
                     # Add run action
                     self._run(node, image, policy)
 
+        # Return action schedule
         return self._actions
 
 

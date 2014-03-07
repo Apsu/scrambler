@@ -120,8 +120,12 @@ class Manager():
             try:
                 # If we're the only master
                 if self._cluster.is_master():
+                    # Schedule actions in accordance with policies
                     actions = scheduler.schedule()
+
+                    # If actions required
                     if actions:
+                        # Publish actions to everyone including ourself
                         self._pubsub.publish(
                             "schedule",
                             actions,
