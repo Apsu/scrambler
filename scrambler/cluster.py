@@ -66,7 +66,7 @@ class Cluster():
                 # Timestamp message
                 data["timestamp"] = time.time()
 
-                # Update our master status based on least lexical hostname
+                # Update master status based on least lexical hostname
                 data["master"] = min(self._state.keys()) == node
 
                 # Store node:data

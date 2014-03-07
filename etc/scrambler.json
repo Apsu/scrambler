@@ -26,15 +26,13 @@
             "affinity": true,
             "strict": false,
             "config": {
-                "ports": [
-                    {
-                        "2222": "22"
-                    }
-                ]
+                "ports": {
+                    "2222": "22"
+                }
             }
         }
     },
-    "scheduler": "RoundRobin",
+    "scheduler": "Distribution",
     "auth": {
         "cluster_key": "35lkjsd98f79235lkjsdf098235"
     }

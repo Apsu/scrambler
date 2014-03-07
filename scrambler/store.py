@@ -29,6 +29,10 @@ class Store():
     def keys(self):
         return self._store.keys()
 
+    @synchronized("read")
+    def items(self):
+        return self._store.items()
+
     @synchronized("write")
     def __setitem__(self, key, value):
         self._store[key] = value

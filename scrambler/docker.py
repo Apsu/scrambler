@@ -23,8 +23,11 @@ class Docker():
         # Store hostname
         self._hostname = self._config["hostname"]
 
-        # Subscription queue
-        self._queue = self._pubsub.subscribe("docker")
+        # Docker subscription
+        self._docker_queue = self._pubsub.subscribe("docker")
+
+        # Schedule subscription
+        self._scheduled_queue = self._pubsub.subscribe("schedule")
 
         # Create client
         self._client = docker.Client()
@@ -33,7 +36,7 @@ class Docker():
         self._state = Store({self._hostname: self.containers_by_image()})
 
         # Start daemon worker threads
-        Threads([self.events, self.handler, self.announce])
+        Threads([self.scheduled, self.events, self.handler, self.announce])
 
     def get_state(self):
         """Just return state object."""
@@ -77,6 +80,71 @@ class Docker():
         # And return it
         return containers
 
+    def scheduled(self):
+        """Handle scheduled actions."""
+
+        while True:
+            try:
+                # Get message from queue
+                key, node, data = self._scheduled_queue.get(timeout=1)
+
+                # Let the queue know we got it
+                self._scheduled_queue.task_done()
+
+                # TODO: Pass in self._cluster_state and check node["master"]?
+
+                print("Got Schedule: {}, {}: {}".format(key, node, data))
+
+                # Continue if no actions for us
+                if self._hostname not in data:
+                    continue
+
+                # Get our actions
+                actions = data[self._hostname]["actions"]
+
+                # For each scheduled action
+                for action in actions:
+                    # Pull out config item
+                    config = action["config"]
+
+                    # If we're told to run a container
+                    if action["do"] == "run":
+                        # Create an appropriate container
+                        container = self._client.create_container(
+                            image=action["image"],
+                            # TODO: Kill containers first to avoid collision?
+                            #name=action["name"],
+                            detach=True,
+                            ports=config["ports"].values()
+                        )
+
+                        # And start it
+                        self._client.start(
+                            container,
+                            port_bindings=config["ports"]
+                        )
+                    # Or if we're told to kill a container
+                    elif action["do"] == "kill":
+                        # Nuke it
+                        self._client.kill(action["uuid"])
+                    # Any other actions
+                    else:
+                        print(
+                            "[{}] Unimplemented scheduled action "
+                            "from {}: {}".format(
+                                time.ctime(),
+                                node,
+                                action
+                            )
+                        )
+            # Continue on queue.get timeout
+            except Queue.Empty:
+                continue
+            # Print anything else and continue
+            except:
+                print("Exception in docker.scheduled():")
+                print(traceback.format_exc())
+
     def announce(self):
         """Periodically announce docker container state."""
 
@@ -100,7 +168,7 @@ class Docker():
                 # Get events from local docker daemon
                 for event in self._client.events():
                     # And push to handler with "event" key
-                    self._queue.put(
+                    self._docker_queue.put(
                         [
                             "event",
                             self._hostname,
@@ -120,10 +188,10 @@ class Docker():
         while True:
             try:
                 # Get message from queue
-                key, node, data = self._queue.get(timeout=1)
+                key, node, data = self._docker_queue.get(timeout=1)
 
                 # Let the queue know we got it
-                self._queue.task_done()
+                self._docker_queue.task_done()
 
                 # If message is state transfer from other nodes
                 if key == "docker":

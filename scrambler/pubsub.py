@@ -43,10 +43,15 @@ class PubSub():
         # Create and subscribe socket to publishers
         self._sub = self._context.socket(zmq.SUB)
 
-        # If using ZMQ 2.x, set high watermarks to same default as 3.x+
+        # If using ZMQ 2.x
         if zmq.zmq_version_info()[0] == 2:
+            # Set high watermarks to same default as 3.x+
             self._pub.setsockopt(zmq.HWM, 1000)
             self._sub.setsockopt(zmq.HWM, 1000)
+
+            # Disable multicast loopback
+            self._pub.setsockopt(zmq.MCAST_LOOP, 0)
+            self._sub.setsockopt(zmq.MCAST_LOOP, 0)
 
         # ...and in the darkness bind them
         self._pub.connect(self._connection)
@@ -69,10 +74,10 @@ class PubSub():
         self._subscribers[key] = Queue.Queue()
         return self._subscribers[key]
 
-    def publish(self, key, data):
+    def publish(self, key, data, loopback=False):
         """Publish message through publisher queue."""
 
-        self._publisher.put([key, self._hostname, data])
+        self._publisher.put([key, data, loopback])
 
     def pub_worker(self):
         """Publish queued messages."""
@@ -80,16 +85,23 @@ class PubSub():
         while True:
             try:
                 # Wait for message from queue
-                key, node, data = self._publisher.get(timeout=1)
+                key, data, loopback = self._publisher.get(timeout=1)
 
                 # Let the queue know we got it
                 self._publisher.task_done()
 
-                # And publish it out
+                # If we're sending it to ourself also
+                if loopback:
+                    # And there's a subscriber
+                    if key in self._subscribers:
+                        # Just push it to the subscriber queue
+                        self._subscribers[key].put([key, self._hostname, data])
+
+                # Publish it out
                 self._pub.send_multipart(
                     [
                         key,
-                        node,
+                        self._hostname,
                         self._digest,
                         json.dumps(data)
                     ]
