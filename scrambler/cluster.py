@@ -24,7 +24,6 @@ class Cluster():
         self._state = Store(
             {
                 self._hostname: {
-                    "timestamp": time.time(),
                     "address": self._address,
                     "master": False
                 }
@@ -65,15 +64,10 @@ class Cluster():
                 self._queue.task_done()
 
                 # Timestamp message
-                data.update({"timestamp": time.time()})
+                data["timestamp"] = time.time()
 
                 # Update our master status based on least lexical hostname
-                data.update(
-                    {
-                        "master":
-                        min(self._state.keys()) == node
-                    }
-                )
+                data["master"] = min(self._state.keys()) == node
 
                 # Store node:data
                 self._state.update({node: data})
