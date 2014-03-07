@@ -112,15 +112,21 @@ class Manager():
         #algorithm = self._config["scheduler"]
         scheduler = Distribution(
             self._config["policies"],
-            self._cluster._state,
-            self._docker._state
+            self._cluster_state,
+            self._docker_state
         )
 
         while True:
             try:
                 # If we're the only master
                 if self._cluster.is_master():
-                    scheduler.schedule()
+                    actions = scheduler.schedule()
+                    if actions:
+                        self._pubsub.publish(
+                            "schedule",
+                            actions,
+                            loopback=True
+                        )
             # Print anything else and continue
             except:
                 print("Exception in manager.schedule():")

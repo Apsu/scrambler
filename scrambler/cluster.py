@@ -87,7 +87,11 @@ class Cluster():
         while True:
             try:
                 # Publish announcement with our state
-                self._pubsub.publish("cluster", self._state[self._hostname])
+                self._pubsub.publish(
+                    "cluster",
+                    self._state[self._hostname],
+                    loopback=True
+                )
             # Print anything else and continue
             except:
                 print("Exception in cluster.announce():")

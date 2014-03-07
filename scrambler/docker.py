@@ -1,6 +1,7 @@
 from __future__ import absolute_import  # When can 3.x be now?
 
 import docker
+import json
 import Queue
 import time
 import traceback
@@ -93,8 +94,6 @@ class Docker():
 
                 # TODO: Pass in self._cluster_state and check node["master"]?
 
-                print("Got Schedule: {}, {}: {}".format(key, node, data))
-
                 # Continue if no actions for us
                 if self._hostname not in data:
                     continue
@@ -104,11 +103,11 @@ class Docker():
 
                 # For each scheduled action
                 for action in actions:
-                    # Pull out config item
-                    config = action["config"]
-
                     # If we're told to run a container
                     if action["do"] == "run":
+                        # Pull out config item
+                        config = action["config"]
+
                         # Create an appropriate container
                         container = self._client.create_container(
                             image=action["image"],
@@ -124,7 +123,7 @@ class Docker():
                             port_bindings=config["ports"]
                         )
                     # Or if we're told to kill a container
-                    elif action["do"] == "kill":
+                    elif action["do"] == "die":
                         # Nuke it
                         self._client.kill(action["uuid"])
                     # Any other actions
@@ -172,7 +171,7 @@ class Docker():
                         [
                             "event",
                             self._hostname,
-                            event
+                            json.loads(event)
                         ]
                     )
             # Print anything else and continue

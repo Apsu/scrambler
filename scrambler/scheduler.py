@@ -37,9 +37,9 @@ class Scheduler():
         self._actions[node]["actions"].append(
             {
                 "do": "run",
+                "image": image,
+                "name": policy["name"],
                 "config": {
-                    "image": image,
-                    "name": policy["name"],
                     "ports": policy["ports"]
                 }
             }
@@ -52,7 +52,7 @@ class Scheduler():
         self._prep(node)
 
         # For each container UUID
-        for uuid in containers.keys():
+        for uuid, _ in containers:
             self._actions[node]["actions"].append(
                 {
                     "do": "die",
@@ -108,7 +108,7 @@ class Distribution(Scheduler):
                 if image in state:
                     # Get list of running containers
                     containers = [
-                        {uuid: container}
+                        (uuid, container)
                         for uuid, container in state[image].items()
                         if container["state"]
                     ]
@@ -116,14 +116,11 @@ class Distribution(Scheduler):
                     # If more than one container is running on this node
                     if len(containers) > 1:
                         # Add die actions for all but first one
-                        self._die(node, image, policy, containers[1:])
-                    # Or if no containers are running on this node
-                    elif not containers:
-                        # Add run action
-                        self._run(node, image, policy)
-                    # Continue because exactly 1 is running
-                    else:
-                        continue
+                        self._die(node, image, containers[1:])
+                # Or if no containers are running on this node
+                else:
+                    # Add run action
+                    self._run(node, image, policy)
 
 
 class RoundRobin(Scheduler):
