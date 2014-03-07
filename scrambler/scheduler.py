@@ -122,6 +122,8 @@ class Distribution(Scheduler):
                     # Add run action
                     self._run(node, image, policy)
 
+        return self._actions
+
 
 class RoundRobin(Scheduler):
     """Implements naive round-robin scheduler."""
