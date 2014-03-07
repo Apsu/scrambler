@@ -207,7 +207,13 @@ class Docker():
                     if data["status"] == "start":
                         # Inspect container and store it
                         state = self.inspect_container(uuid)
-                        self._state[self._hostname][image][uuid].update(state)
+                        self._state[self._hostname].update(
+                            {
+                                image: {
+                                    uuid: state
+                                }
+                            }
+                        )
                     # If container has died
                     elif data["status"] == "die":
                         # Delete it from storage
